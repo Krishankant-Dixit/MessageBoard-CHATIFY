@@ -88,8 +88,7 @@ npm start
 
 ## Next Steps
 
-- Read [SETUP.md](SETUP.md) for detailed setup
-- Check [DESIGN.md](DESIGN.md) for design system
+- Read [SETUP.md](SETUP.md) for detailed setup instructions
 - See [ARCHITECTURE.md](ARCHITECTURE.md) for app structure
 - Read [README.md](README.md) for full documentation
 

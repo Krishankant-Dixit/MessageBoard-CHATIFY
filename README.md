@@ -1,3 +1,13 @@
+<div align="center">
+
+# CHATIFY - On-Chain Message Board
+
+<img src="assets/icon.png" alt="Chatify logo" heigt=500 width=500>
+
+</div>
+
+---
+
 # Company-Focused Social Messaging Application
 
 A mobile-first blockchain-powered messaging application built with React Native and Expo. Supports private and public chat rooms with immutable, tamper-proof messages stored on blockchain. Features include message editing with full history tracking, company-wide conversations, dual authentication (email or blockchain wallet), and AI-powered features via Google Gemini API.
@@ -76,41 +86,82 @@ npm start
 
 ## Project Structure
 
+The project structure is organized as follows:
+
 ```
+MessageBoard-CHATIFY/
+├── app.json
+├── App.tsx
+├── ARCHITECTURE.md
+├── GEMINI_API_SETUP.md
+├── index.ts
+├── METAMASK_SETUP.md
+├── package.json
+├── PROJECT_COMPLETION_REPORT.md
+├── QUICKSTART.md
+├── README.md
+├── SETUP.md
+├── tsconfig.json
+├── assets/
 ├── src/
-│   ├── components/       # Reusable UI components
+│   ├── components/
+│   │   ├── AppHeader.tsx
+│   │   ├── BackButton.tsx
 │   │   ├── Button.tsx
 │   │   ├── Card.tsx
+│   │   ├── ChatBubble.tsx
+│   │   ├── ChatInput.tsx
+│   │   ├── index.ts
 │   │   ├── Input.tsx
+│   │   ├── LoadingScreen.tsx
 │   │   ├── MessageCard.tsx
-│   │   └── LoadingScreen.tsx
-│   ├── context/          # React context providers
-│   │   ├── AuthContext.tsx      # Authentication state management
-│   │   └── Web3Context.tsx      # Web3 wallet integration
-│   ├── contracts/        # Smart contract ABIs and addresses
-│   │   └── MessageBoard.ts
-│   ├── navigation/       # Navigation configuration
-│   │   └── AppNavigator.tsx
-│   ├── screens/          # Application screens
-│   │   ├── LoginScreen.tsx      # Email/Wallet authentication
-│   │   ├── ChatRoomsScreen.tsx  # List of chat rooms
-│   │   ├── ChatRoomScreen.tsx   # Individual chat room
-│   │   ├── CreateRoomScreen.tsx # Create new rooms
-│   │   ├── HomeScreen.tsx       # Legacy message board
-│   │   └── PostMessageScreen.tsx
-│   ├── theme/            # Design system and styling
+│   │   ├── ProfileAvatar.tsx
+│   ├── context/
+│   │   ├── AuthContext.tsx
+│   │   ├── ThemeContext.tsx
+│   │   ├── Web3Context.tsx
+│   ├── contracts/
+│   │   ├── MessageBoard.ts
+│   ├── navigation/
+│   │   ├── AppNavigator.tsx
+│   ├── screens/
+│   │   ├── ChatRoomScreen.tsx
+│   │   ├── ChatRoomsScreen.tsx
+│   │   ├── ChatScreen.tsx
+│   │   ├── CreateRoomScreen.tsx
+│   │   ├── HomeScreen_backup.tsx
+│   │   ├── HomeScreen.tsx
+│   │   ├── index.ts
+│   │   ├── LoginScreen.tsx
+│   │   ├── PostMessageScreen.tsx
+│   │   ├── ProfileScreen.tsx
+│   │   ├── SettingsScreen.tsx
+│   ├── services/
+│   │   ├── geminiService.ts
+│   ├── theme/
 │   │   ├── colors.ts
+│   │   ├── index.ts
 │   │   ├── spacing.ts
+│   │   ├── theme.ts
 │   │   ├── typography.ts
-│   │   └── index.ts
-│   └── utils/            # Helper functions
-│       ├── helpers.ts
-│       └── constants.ts
-├── assets/               # Images and static files
-├── App.tsx               # Root component
-├── app.json              # Expo configuration
-└── package.json          # Dependencies
+│   ├── utils/
+│   │   ├── constants.ts
+│   │   ├── helpers.ts
 ```
+
+## Workflow Chart
+
+The workflow for the application is as follows:
+
+1. User logs in via email or blockchain wallet.
+2. User can create or join chat rooms.
+3. Messages are sent and stored on the blockchain.
+4. Users can edit messages, preserving the edit history.
+5. AI features analyze message safety and provide suggestions.
+6. Users can engage in company-wide conversations or group discussions.
+7. All communications are secured with end-to-end encryption.
+
+**Note:** Ensure to follow the project structure for adding new features or components.
 
 ## Setup & Configuration
 
@@ -247,9 +298,12 @@ This project uses TypeScript for type safety. Key types and interfaces are defin
 
 3. Scan the QR code with your device
 
-## Contributing
+## Contributing and team
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+| Name            | Role                          |
+|-----------------|-------------------------------|
+| [`Ayush`](https://github.com/ayush-code303)     | Web3 & Testing       |
+| [`Krishankant Dixit`](https://github.com/krishankantdixit)     | Development and Design       |
 
 ## License
 
@@ -257,4 +311,4 @@ MIT License
 
 ## Acknowledgments
 
-Built with ❤️ using React Native, Expo, and Web3 technologies.
+Built using React Native, Expo, and Web3 technologies.
