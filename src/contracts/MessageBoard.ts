@@ -125,3 +125,28 @@ export interface Message {
   editHistory?: MessageEdit[];
 }
 
+// ... (keep existing content)
+
+// Add reaction types (off-chain)
+export interface ReactionSummary {
+  reaction: string;
+  count: number;
+  reactedByMe?: boolean;
+  users?: string[]; // user IDs or addresses
+}
+
+// Extend Message with optional reactions (off-chain only)
+export interface Message {
+  id: number;
+  sender: string;
+  content: string;
+  timestamp: number;
+  isEdited: boolean;
+  editCount: number;
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  sentimentIcon?: string;
+  roomId?: string;
+  isPrivate?: boolean;
+  editHistory?: MessageEdit[];
+  reactions?: Record<string, string[]>; // reaction -> list of userIds (optional, maintained off-chain)
+}

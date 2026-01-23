@@ -1,191 +1,138 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { theme } from '../theme';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Message } from '../contracts/MessageBoard';
-import { formatAddress, formatTimestamp } from '../utils/helpers';
+import { loadReactions, toggleReaction, summarizeReactions } from '../services/reactionService';
+import { useWeb3 } from '../context/Web3Context';
+import { theme } from '../theme';
 
-interface MessageCardProps {
-  message: Message & { sentimentIcon?: string };
-  onPress?: () => void;
-  variant?: 'sent' | 'received' | 'list';
-  showSender?: boolean;
+// Simple emoji set for quick reactions
+const EMOJI_SET = ['👍', '❤️', '😂', '🔥', '🎉', '😮'];
+
+interface Props {
+  message: Message;
+  onOpenReplies?: () => void;
+  style?: any;
 }
 
-export const MessageCard: React.FC<MessageCardProps> = ({ 
-  message, 
-  onPress,
-  variant = 'list',
-  showSender = true,
-}) => {
-  const content = (
-    <View 
-      style={[
-        styles.messageContainer,
-        variant === 'sent' && styles.sentContainer,
-        variant === 'received' && styles.receivedContainer,
-        variant === 'list' && styles.listContainer,
-      ]}
-    >
-      {showSender && variant !== 'sent' && (
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {message.sender.slice(2, 4).toUpperCase()}
+export const MessageCard: React.FC<Props> = ({ message, style, onOpenReplies }) => {
+  const { account } = useWeb3();
+  const userId = account || 'local:' + (message.sender || 'unknown'); // fallback to sender or local id
+  const [reactionMap, setReactionMap] = useState<Record<string, string[]>>(message.reactions || {});
+  const [summary, setSummary] = useState<any[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      const map = await loadReactions(message.id);
+      if (mounted) {
+        // merge stored map with any inline message.reactions (optional)
+        const merged = { ...(message.reactions || {}), ...map };
+        setReactionMap(merged);
+        setSummary(summarizeReactions(merged, userId));
+      }
+    }
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [message.id, message.reactions, userId]);
+
+  const handleToggle = async (reaction: string) => {
+    const updated = await toggleReaction(message.id, reaction, userId);
+    setReactionMap(updated);
+    setSummary(summarizeReactions(updated, userId));
+  };
+
+  return (
+    <View style={[styles.container, style]}>
+      <View style={styles.header}>
+        <Text style={styles.sender}>{message.sender}</Text>
+        <Text style={styles.time}>{new Date(message.timestamp * 1000).toLocaleTimeString()}</Text>
+      </View>
+
+      <Text style={styles.content}>{message.content}</Text>
+
+      {/* Reactions summary */}
+      <View style={styles.reactionsRow}>
+        {summary.map((r) => (
+          <TouchableOpacity
+            key={r.reaction}
+            style={[styles.reactionButton, r.reactedByMe && styles.reacted]}
+            onPress={() => handleToggle(r.reaction)}
+          >
+            <Text style={styles.reactionText}>
+              {r.reaction} {r.count}
             </Text>
-          </View>
-        </View>
-      )}
-      
-      <View style={[
-        styles.bubble,
-        variant === 'sent' && styles.sentBubble,
-        variant === 'received' && styles.receivedBubble,
-        variant === 'list' && styles.listBubble,
-      ]}>
-        {showSender && variant !== 'sent' && (
-          <Text style={styles.senderName}>{formatAddress(message.sender)}</Text>
-        )}
-        
-        <Text style={[
-          styles.content,
-          variant === 'sent' && styles.sentContent,
-        ]}>
-          {message.content}
-        </Text>
-        
-        <View style={styles.footer}>
-          <Text style={[
-            styles.timestamp,
-            variant === 'sent' && styles.sentTimestamp,
-          ]}>
-            {formatTimestamp(message.timestamp)}
-          </Text>
-          
-          {message.isEdited && (
-            <Text style={[
-              styles.editedBadge,
-              variant === 'sent' && styles.sentEditedBadge,
-            ]}>
-              • Edited
-            </Text>
-          )}
-          
-          {message.sentimentIcon && variant === 'list' && (
-            <Text style={styles.sentimentIcon}>{message.sentimentIcon}</Text>
-          )}
+          </TouchableOpacity>
+        ))}
+
+        {/* Quick add buttons */}
+        <View style={styles.quickAdd}>
+          {EMOJI_SET.map((e) => (
+            <TouchableOpacity key={e} onPress={() => handleToggle(e)} style={styles.emojiButton}>
+              <Text style={styles.emoji}>{e}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     </View>
   );
-
-  if (onPress) {
-    return (
-      <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.touchable}>
-        {content}
-      </TouchableOpacity>
-    );
-  }
-
-  return content;
 };
 
 const styles = StyleSheet.create({
-  touchable: {
-    marginBottom: theme.spacing.sm,
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    marginBottom: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-  },
-  sentContainer: {
-    justifyContent: 'flex-end',
-  },
-  receivedContainer: {
-    justifyContent: 'flex-start',
-  },
-  listContainer: {
-    justifyContent: 'flex-start',
-  },
-  avatarContainer: {
-    marginRight: theme.spacing.sm,
-    marginTop: theme.spacing.xs,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: theme.colors.textOnPrimary,
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.bold,
-  },
-  bubble: {
-    maxWidth: '75%',
-    borderRadius: theme.borderRadius.lg,
+  container: {
     padding: theme.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  sentBubble: {
-    backgroundColor: theme.colors.messageSent,
-    borderBottomRightRadius: 4,
-  },
-  receivedBubble: {
-    backgroundColor: theme.colors.messageReceived,
-    borderBottomLeftRadius: 4,
-  },
-  listBubble: {
     backgroundColor: theme.colors.card,
-    maxWidth: '100%',
-    flex: 1,
+    borderRadius: 12,
+    marginVertical: theme.spacing.sm,
   },
-  senderName: {
-    color: theme.colors.primary,
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.semibold,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: theme.spacing.xs,
+  },
+  sender: {
+    color: theme.colors.text,
+    fontWeight: '600',
+  },
+  time: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
   },
   content: {
     color: theme.colors.text,
-    fontSize: 15,
-    lineHeight: 24,
-    fontWeight: '400',
+    marginBottom: theme.spacing.sm,
   },
-  sentContent: {
-    color: theme.colors.textOnPrimary,
-  },
-  footer: {
+  reactionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: theme.spacing.sm,
-    gap: theme.spacing.xs,
+    flexWrap: 'wrap',
   },
-  timestamp: {
-    color: theme.colors.textTertiary,
-    fontSize: theme.typography.fontSize.xs,
-    fontWeight: theme.typography.fontWeight.medium,
+  reactionButton: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 6,
   },
-  sentTimestamp: {
-    color: 'rgba(255, 255, 255, 0.7)',
+  reactionText: {
+    color: theme.colors.text,
   },
-  editedBadge: {
-    color: theme.colors.textMuted,
-    fontSize: theme.typography.fontSize.xs,
-    fontWeight: theme.typography.fontWeight.medium,
+  reacted: {
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.background,
   },
-  sentEditedBadge: {
-    color: 'rgba(255, 255, 255, 0.6)',
+  quickAdd: {
+    flexDirection: 'row',
+    marginLeft: 4,
   },
-  sentimentIcon: {
-    fontSize: theme.typography.fontSize.md,
-    marginLeft: 'auto',
+  emojiButton: {
+    padding: 6,
+    marginRight: 6,
+  },
+  emoji: {
+    fontSize: 16,
   },
 });
