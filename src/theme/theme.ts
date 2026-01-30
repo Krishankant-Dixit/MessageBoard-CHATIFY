@@ -101,45 +101,45 @@ export const lightTheme: Theme = {
   name: 'light',
   colors: {
     // Primary colors - Softer for light mode
-    primary: '#6D28D9', // Purple
-    primaryDark: '#5B21B6',
-    primaryLight: '#A78BFA',
-    primaryGradientStart: '#6D28D9',
-    primaryGradientEnd: '#EC4899',
+    primary: '#2AABEE',
+    primaryDark: '#229ED9',
+    primaryLight: '#6EC6FF',
+    primaryGradientStart: '#2AABEE',
+    primaryGradientEnd: '#25D366',
     
     // Secondary accent
-    secondary: '#0891B2', // Cyan
-    secondaryDark: '#0369A1',
-    secondaryLight: '#22D3EE',
+    secondary: '#25D366',
+    secondaryDark: '#1DA851',
+    secondaryLight: '#62E891',
     
     // Background colors - Light variants
-    background: '#FFFFFF',
-    backgroundSecondary: '#F3F4F6',
-    backgroundTertiary: '#E5E7EB',
-    backgroundElevated: '#F9FAFB',
-    chatBackground: '#FAFAFA',
+    background: '#F5F7F9',
+    backgroundSecondary: '#EEF2F5',
+    backgroundTertiary: '#E2E8ED',
+    backgroundElevated: '#FFFFFF',
+    chatBackground: '#F7F9FB',
     
     // Message colors
-    messageReceived: '#F3F4F6',
-    messageSent: '#6D28D9',
-    messageSentDark: '#5B21B6',
+    messageReceived: '#EEF2F5',
+    messageSent: '#2AABEE',
+    messageSentDark: '#229ED9',
     
     // Card and surface colors
-    card: '#F9FAFB',
-    cardHover: '#F3F4F6',
-    cardBorder: 'rgba(0, 0, 0, 0.08)',
+    card: '#FFFFFF',
+    cardHover: '#F2F6F9',
+    cardBorder: 'rgba(0, 0, 0, 0.06)',
     
     // Text colors - Dark for light mode
-    text: '#111827',
-    textSecondary: '#6B7280',
-    textTertiary: '#9CA3AF',
-    textMuted: '#D1D5DB',
+    text: '#0B141A',
+    textSecondary: '#4B5A65',
+    textTertiary: '#6B7A86',
+    textMuted: '#9AA6AF',
     textOnPrimary: '#FFFFFF',
     
     // Accent colors
-    accent: '#10B981',
-    accentSecondary: '#F59E0B',
-    accentTertiary: '#EC4899',
+    accent: '#25D366',
+    accentSecondary: '#2AABEE',
+    accentTertiary: '#F59E0B',
     
     // Status colors - Light variants
     success: '#10B981',
@@ -148,8 +148,8 @@ export const lightTheme: Theme = {
     warningLight: '#FBBF24',
     error: '#EF4444',
     errorLight: '#FECACA',
-    info: '#3B82F6',
-    infoLight: '#93C5FD',
+    info: '#2AABEE',
+    infoLight: '#6EC6FF',
     
     // Status indicators
     online: '#10B981',
@@ -157,127 +157,128 @@ export const lightTheme: Theme = {
     away: '#F59E0B',
     
     // Border colors - Light variants
-    border: 'rgba(0, 0, 0, 0.1)',
-    borderLight: 'rgba(0, 0, 0, 0.06)',
+    border: 'rgba(0, 0, 0, 0.08)',
+    borderLight: 'rgba(0, 0, 0, 0.05)',
     borderDark: 'rgba(0, 0, 0, 0.12)',
-    divider: 'rgba(0, 0, 0, 0.08)',
+    divider: 'rgba(0, 0, 0, 0.06)',
     
     // Transparent variations
-    overlay: 'rgba(0, 0, 0, 0.6)',
-    overlayLight: 'rgba(0, 0, 0, 0.3)',
-    glassEffect: 'rgba(249, 250, 251, 0.9)',
-    glassBorder: 'rgba(0, 0, 0, 0.1)',
+    overlay: 'rgba(0, 0, 0, 0.55)',
+    overlayLight: 'rgba(0, 0, 0, 0.25)',
+    glassEffect: 'rgba(255, 255, 255, 0.9)',
+    glassBorder: 'rgba(0, 0, 0, 0.08)',
     
     // Gradients
-    gradientPurple: ['#6D28D9', '#A78BFA'],
-    gradientCyan: ['#0891B2', '#22D3EE'],
-    gradientPink: ['#EC4899', '#F472B6'],
-    gradientGreen: ['#10B981', '#34D399'],
-    gradientMain: ['#6D28D9', '#0891B2'],
+    gradientPurple: ['#2AABEE', '#6EC6FF'],
+    gradientCyan: ['#2AABEE', '#6EC6FF'],
+    gradientPink: ['#F59E0B', '#FBBF24'],
+    gradientGreen: ['#25D366', '#62E891'],
+    gradientMain: ['#2AABEE', '#25D366'],
     
     // Shimmer and loading
-    shimmerBase: '#E5E7EB',
-    shimmerHighlight: '#F3F4F6',
+    shimmerBase: '#E6EDF2',
+    shimmerHighlight: '#F2F6F9',
     
     // Input specific
-    inputBackground: '#F3F4F6',
-    inputBorder: 'rgba(0, 0, 0, 0.1)',
-    inputFocusBorder: '#6D28D9',
-    inputPlaceholder: '#9CA3AF',
+    inputBackground: '#EEF2F5',
+    inputBorder: 'rgba(0, 0, 0, 0.08)',
+    inputFocusBorder: '#2AABEE',
+    inputPlaceholder: '#7E8A94',
   },
 };
 
 /**
  * Dark Theme
  * Modern minimalist dark colors optimized for OLED screens and low-light viewing
+ * Refined for better contrast and consistency with modern chat apps
  */
 export const darkTheme: Theme = {
   name: 'dark',
   colors: {
     // Primary colors - Vibrant for dark mode
-    primary: '#7C3AED', // Purple
-    primaryDark: '#6D28D9',
-    primaryLight: '#A78BFA',
-    primaryGradientStart: '#7C3AED',
-    primaryGradientEnd: '#EC4899',
+    primary: '#2AABEE',
+    primaryDark: '#229ED9',
+    primaryLight: '#6EC6FF',
+    primaryGradientStart: '#2AABEE',
+    primaryGradientEnd: '#25D366',
     
     // Secondary accent
-    secondary: '#06B6D4', // Cyan
-    secondaryDark: '#0891B2',
-    secondaryLight: '#22D3EE',
+    secondary: '#25D366',
+    secondaryDark: '#1DA851',
+    secondaryLight: '#62E891',
     
-    // Background colors - Deep dark variants
-    background: '#0F0F0F', // Deeper black for OLED
-    backgroundSecondary: '#1A1A1A',
-    backgroundTertiary: '#252525',
-    backgroundElevated: '#2A2A2A',
-    chatBackground: '#0A0A0A',
+    // Background colors - Deep dark variants optimized for OLED
+    background: '#0B141A',
+    backgroundSecondary: '#1A232B',
+    backgroundTertiary: '#242F38',
+    backgroundElevated: '#2C3A43',
+    chatBackground: '#0B141A',
     
-    // Message colors
-    messageReceived: '#1E293B', // Slate
-    messageSent: '#7C3AED',
-    messageSentDark: '#6D28D9',
+    // Message colors - Improved contrast
+    messageReceived: '#1A232B',
+    messageSent: '#2B5A95',
+    messageSentDark: '#1F3F6B',
     
     // Card and surface colors
-    card: '#1F1F1F',
-    cardHover: '#2A2A2A',
-    cardBorder: 'rgba(255, 255, 255, 0.05)',
+    card: '#1A232B',
+    cardHover: '#242F38',
+    cardBorder: 'rgba(255, 255, 255, 0.08)',
     
-    // Text colors - Light for dark mode
+    // Text colors - Enhanced contrast for dark mode
     text: '#FFFFFF',
-    textSecondary: '#A1A1AA', // Zinc-400
-    textTertiary: '#71717A', // Zinc-500
-    textMuted: '#52525B', // Zinc-600
+    textSecondary: '#B0B8C1',
+    textTertiary: '#8A9299',
+    textMuted: '#6A7278',
     textOnPrimary: '#FFFFFF',
     
     // Accent colors
-    accent: '#10B981',
-    accentSecondary: '#F59E0B',
-    accentTertiary: '#EC4899',
+    accent: '#25D366',
+    accentSecondary: '#2AABEE',
+    accentTertiary: '#FFB740',
     
-    // Status colors - Dark variants
-    success: '#22C55E',
-    successLight: '#4ADE80',
-    warning: '#F59E0B',
-    warningLight: '#FBBF24',
-    error: '#EF4444',
-    errorLight: '#F87171',
-    info: '#3B82F6',
-    infoLight: '#60A5FA',
+    // Status colors - Refined for dark mode
+    success: '#31A24C',
+    successLight: '#52D273',
+    warning: '#FFB740',
+    warningLight: '#FFC966',
+    error: '#FF4444',
+    errorLight: '#FF6B6B',
+    info: '#2AABEE',
+    infoLight: '#6EC6FF',
     
     // Status indicators
-    online: '#22C55E',
-    offline: '#71717A',
-    away: '#F59E0B',
+    online: '#31A24C',
+    offline: '#8A9299',
+    away: '#FFB740',
     
     // Border colors - Subtle for dark mode
-    border: 'rgba(255, 255, 255, 0.08)',
-    borderLight: 'rgba(255, 255, 255, 0.12)',
-    borderDark: 'rgba(255, 255, 255, 0.04)',
-    divider: 'rgba(255, 255, 255, 0.06)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    borderLight: 'rgba(255, 255, 255, 0.15)',
+    borderDark: 'rgba(255, 255, 255, 0.06)',
+    divider: 'rgba(255, 255, 255, 0.08)',
     
     // Transparent variations
     overlay: 'rgba(0, 0, 0, 0.85)',
     overlayLight: 'rgba(0, 0, 0, 0.6)',
-    glassEffect: 'rgba(31, 31, 31, 0.8)',
+    glassEffect: 'rgba(26, 35, 43, 0.85)',
     glassBorder: 'rgba(255, 255, 255, 0.1)',
     
     // Gradients
-    gradientPurple: ['#7C3AED', '#A78BFA'],
-    gradientCyan: ['#06B6D4', '#22D3EE'],
-    gradientPink: ['#EC4899', '#F472B6'],
-    gradientGreen: ['#10B981', '#34D399'],
-    gradientMain: ['#7C3AED', '#06B6D4'],
+    gradientPurple: ['#2AABEE', '#6EC6FF'],
+    gradientCyan: ['#2AABEE', '#6EC6FF'],
+    gradientPink: ['#FFB740', '#FFC966'],
+    gradientGreen: ['#25D366', '#52D273'],
+    gradientMain: ['#2AABEE', '#25D366'],
     
     // Shimmer and loading
-    shimmerBase: '#1A1A1A',
-    shimmerHighlight: '#2A2A2A',
+    shimmerBase: '#1A232B',
+    shimmerHighlight: '#242F38',
     
-    // Input specific
-    inputBackground: '#1A1A1A',
-    inputBorder: 'rgba(255, 255, 255, 0.1)',
-    inputFocusBorder: '#7C3AED',
-    inputPlaceholder: '#71717A',
+    // Input specific - Improved contrast
+    inputBackground: '#1A232B',
+    inputBorder: 'rgba(255, 255, 255, 0.15)',
+    inputFocusBorder: '#2AABEE',
+    inputPlaceholder: '#8A9299',
   },
 };
 

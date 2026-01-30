@@ -93,10 +93,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   
   content: {
@@ -136,25 +136,25 @@ const styles = StyleSheet.create({
   
   // Sizes
   small: {
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
     paddingHorizontal: theme.spacing.md,
-    minHeight: 36,
+    minHeight: 34,
   },
   medium: {
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
-    minHeight: 44,
+    minHeight: 42,
   },
   large: {
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: theme.spacing.xl,
-    minHeight: 56,
+    minHeight: 52,
   },
   
   // Text styles
   text: {
     fontWeight: theme.typography.fontWeight.semibold,
-    letterSpacing: theme.typography.letterSpacing.wide,
+    letterSpacing: theme.typography.letterSpacing.normal,
   },
   primaryText: {
     color: theme.colors.textOnPrimary,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.base,
   },
   largeText: {
-    fontSize: theme.typography.fontSize.lg,
+    fontSize: theme.typography.fontSize.md,
   },
   
   disabled: {

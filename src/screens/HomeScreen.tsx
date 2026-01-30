@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  SectionList,
   RefreshControl,
   TouchableOpacity,
   Alert,
@@ -27,7 +28,7 @@ import { theme } from '../theme';
 import { Message } from '../contracts/MessageBoard';
 import { analyzeSentiment } from '../services/geminiService';
 import { formatTimestamp } from '../utils/helpers';
-import { MAX_MESSAGE_LENGTH } from '../utils/constants';
+import { DEMO_MODE, MAX_MESSAGE_LENGTH } from '../utils/constants';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<any, 'Chats'>,
@@ -43,8 +44,98 @@ interface DisplayMessage extends Message {
   safetyStatus?: 'safe' | 'warning' | 'unsafe';
 }
 
+type ChatType = 'personal' | 'group' | 'company';
+
+interface ChatItem {
+  id: string;
+  name: string;
+  type: ChatType;
+  avatar: string;
+  lastMessage: string;
+  timestamp: number;
+  unreadCount: number;
+}
+
+const pinnedChats: ChatItem[] = [
+  {
+    id: 'pinned_chatify_team',
+    name: 'CHATIFY Team',
+    type: 'company',
+    avatar: '🏢',
+    lastMessage: 'Launch checklist ready for review.',
+    timestamp: Math.floor(Date.now() / 1000) - 300,
+    unreadCount: 2,
+  },
+  {
+    id: 'pinned_web3_builders',
+    name: 'Web3 Builders',
+    type: 'group',
+    avatar: '🧱',
+    lastMessage: 'Contract demo is live on Sepolia.',
+    timestamp: Math.floor(Date.now() / 1000) - 1800,
+    unreadCount: 4,
+  },
+];
+
+const recentChats: ChatItem[] = [
+  {
+    id: 'chat_acme_corp',
+    name: 'Acme Corp',
+    type: 'company',
+    avatar: '🏭',
+    lastMessage: 'Please share the Q1 onboarding deck.',
+    timestamp: Math.floor(Date.now() / 1000) - 3600,
+    unreadCount: 0,
+  },
+  {
+    id: 'chat_design_sync',
+    name: 'Design Sync',
+    type: 'group',
+    avatar: '🎨',
+    lastMessage: 'Updated the spacing system and typography.',
+    timestamp: Math.floor(Date.now() / 1000) - 7200,
+    unreadCount: 1,
+  },
+  {
+    id: 'chat_personal_alex',
+    name: 'Alex Chen',
+    type: 'personal',
+    avatar: '👤',
+    lastMessage: 'Let’s align on the demo flow tomorrow.',
+    timestamp: Math.floor(Date.now() / 1000) - 8600,
+    unreadCount: 0,
+  },
+  {
+    id: 'chat_hr_updates',
+    name: 'HR Updates',
+    type: 'company',
+    avatar: '📌',
+    lastMessage: 'Reminder: benefits enrollment closes Friday.',
+    timestamp: Math.floor(Date.now() / 1000) - 10800,
+    unreadCount: 3,
+  },
+  {
+    id: 'chat_personal_maya',
+    name: 'Maya Patel',
+    type: 'personal',
+    avatar: '👩‍💻',
+    lastMessage: 'Pushed the latest UI polish changes.',
+    timestamp: Math.floor(Date.now() / 1000) - 14400,
+    unreadCount: 0,
+  },
+  {
+    id: 'chat_product_guild',
+    name: 'Product Guild',
+    type: 'group',
+    avatar: '📣',
+    lastMessage: 'Roadmap items are finalized for review.',
+    timestamp: Math.floor(Date.now() / 1000) - 20000,
+    unreadCount: 6,
+  },
+];
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { isConnected, account, connectWallet, disconnectWallet, getMessages, postMessage } = useWeb3();
+  const { isConnected, account, network, connectWallet, disconnectWallet, getMessages, postMessage } = useWeb3();
   const { colors, isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -124,6 +215,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     try {
       await connectWallet();
       Alert.alert('Success', '✓ Wallet connected successfully!');
+      if (DEMO_MODE) {
+        navigation.navigate('MainTabs' as any, { screen: 'Chats' });
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to connect wallet.');
     }
@@ -318,53 +412,95 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return colors[index];
   };
 
+  const getChatTypeLabel = (type: ChatType): string => {
+    switch (type) {
+      case 'company':
+        return 'Company';
+      case 'group':
+        return 'Group';
+      default:
+        return 'Personal';
+    }
+  };
+
+  const getDayLabel = (timestamp: number): string => {
+    const date = new Date(timestamp * 1000);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+
+    if (isSameDay(date, today)) return 'Today';
+    if (isSameDay(date, yesterday)) return 'Yesterday';
+    return date.toLocaleDateString();
+  };
+
   const renderMessage = ({ item, index }: { item: DisplayMessage; index: number }) => {
     const initials = getAvatarInitials(item.sender);
     const avatarColor = getAvatarColor(item.sender);
     const isLastMessage = index === messages.length - 1;
+    const isSender = account ? item.sender.toLowerCase() === account.toLowerCase() : false;
+    const currentDay = getDayLabel(item.timestamp);
+    const prevMessage = index > 0 ? messages[index - 1] : null;
+    const prevDay = prevMessage ? getDayLabel(prevMessage.timestamp) : null;
+    const showDayDivider = !prevDay || prevDay !== currentDay;
 
     return (
       <Animated.View
         style={[
           styles.messageWrapper,
-          {
-            opacity: Animated.add(scrollAnim, 1),
-          },
+          { opacity: messageOpacity },
         ]}
       >
-        <View style={styles.messageContainer}>
-          {/* Avatar */}
-          <View
-            style={[
-              styles.avatar,
-              { backgroundColor: avatarColor },
-            ]}
-          >
-            <Text style={styles.avatarText}>{initials}</Text>
+        {showDayDivider && (
+          <View style={styles.dateDivider}>
+            <Text style={styles.dateDividerText}>{currentDay}</Text>
           </View>
+        )}
+
+        <View style={[styles.messageContainer, isSender && styles.messageContainerRight]}>
+          {/* Avatar */}
+          {!isSender && (
+            <View
+              style={[
+                styles.avatar,
+                { backgroundColor: avatarColor },
+              ]}
+            >
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+          )}
 
           {/* Message Content */}
-          <View style={styles.messageBubbleWrapper}>
+          <View style={[styles.messageBubbleWrapper, isSender && styles.messageBubbleWrapperRight]}>
             {/* Sender Info */}
-            <View style={styles.senderInfo}>
+            <View style={[styles.senderInfo, isSender && styles.senderInfoRight]}>
               <Text style={styles.senderAddress}>
-                {formatAddress(item.sender)}
-              </Text>
-              <Text style={styles.timestamp}>
-                {formatTimestamp(item.timestamp)}
+                {isSender ? 'You' : formatAddress(item.sender)}
               </Text>
             </View>
 
             {/* Message Bubble */}
-            <View style={[styles.messageBubble, styles.receivedBubble]}>
-              <Text style={styles.messageText}>{item.content}</Text>
+            <View style={[styles.messageBubble, isSender ? styles.sentBubble : styles.receivedBubble]}>
+              <Text style={[styles.messageText, isSender && styles.messageTextSent]}>
+                {item.content}
+              </Text>
               {item.isEdited && (
                 <Text style={styles.editedLabel}>(edited)</Text>
               )}
             </View>
 
+            {/* Timestamp */}
+            <Text style={[styles.timestamp, isSender && styles.timestampRight]}>
+              {formatTimestamp(item.timestamp)}
+            </Text>
+
             {/* Sentiment Badge */}
-            <View style={styles.badgeContainer}>
+            <View style={[styles.badgeContainer, isSender && styles.badgeContainerRight]}>
               <View
                 style={[
                   styles.sentimentBadge,
@@ -405,6 +541,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               </View>
             </View>
           </View>
+
+          {isSender && (
+            <View
+              style={[
+                styles.avatar,
+                { backgroundColor: avatarColor },
+              ]}
+            >
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+          )}
         </View>
 
         {isLastMessage && messages.length > 0 && (
@@ -414,58 +561,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     );
   };
 
-  if (!isConnected) {
+  const chatSections = [
+    { title: 'Pinned', data: pinnedChats },
+    { title: 'Recent Chats', data: recentChats },
+  ];
+
+  const renderChatItem = ({ item }: { item: ChatItem }) => {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-          backgroundColor={colors.background}
-        />
-
-        <View style={styles.welcomeContainer}>
-          <View style={styles.welcomeHeader}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.logoIcon}>💬</Text>
-            </View>
-            <Text style={styles.title}>Chatify</Text>
-            <Text style={styles.subtitle}>
-              Decentralized messaging with AI insights
-            </Text>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() =>
+          navigation.navigate(
+            'ChatRoom' as any,
+            {
+              roomId: item.id,
+              roomName: item.name,
+              chatType: item.type,
+              chatAvatar: item.avatar,
+            } as any
+          )
+        }
+      >
+        <Animated.View style={[styles.chatItem, { opacity: messageOpacity }]}
+        >
+          <View style={styles.chatAvatar}>
+            <Text style={styles.chatAvatarText}>{item.avatar}</Text>
           </View>
-
-          <View style={styles.featureGrid}>
-            <View style={styles.featureCard}>
-              <Text style={styles.featureIcon}>⛓️</Text>
-              <Text style={styles.featureTitle}>Decentralized</Text>
+          <View style={styles.chatInfo}>
+            <View style={styles.chatRow}>
+              <Text style={styles.chatName} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text style={styles.chatTime}>{formatTimestamp(item.timestamp)}</Text>
             </View>
-            <View style={styles.featureCard}>
-              <Text style={styles.featureIcon}>🔒</Text>
-              <Text style={styles.featureTitle}>Secure</Text>
-            </View>
-            <View style={styles.featureCard}>
-              <Text style={styles.featureIcon}>🤖</Text>
-              <Text style={styles.featureTitle}>AI-Powered</Text>
-            </View>
-            <View style={styles.featureCard}>
-              <Text style={styles.featureIcon}>⚡</Text>
-              <Text style={styles.featureTitle}>Fast</Text>
+            <View style={styles.chatMetaRow}>
+              <View style={styles.chatTypePill}>
+                <Text style={styles.chatTypeText}>{getChatTypeLabel(item.type)}</Text>
+              </View>
+              <Text style={styles.chatPreview} numberOfLines={1}>
+                {item.lastMessage}
+              </Text>
+              {item.unreadCount > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadText}>{item.unreadCount}</Text>
+                </View>
+              )}
             </View>
           </View>
-
-          <View style={styles.actionContainer}>
-            <Button
-              title="Connect Wallet"
-              onPress={handleConnect}
-              size="large"
-              variant="primary"
-              fullWidth
-              icon="🔗"
-            />
-          </View>
-        </View>
-      </View>
+        </Animated.View>
+      </TouchableOpacity>
     );
-  }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -480,6 +626,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           styles.header,
           {
             opacity: headerOpacity,
+            paddingTop: Math.max(insets.top, theme.spacing.lg),
           },
         ]}
       >
@@ -495,7 +642,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text style={styles.walletAddress}>
                   {formatAddress(account || '')}
                 </Text>
+                {DEMO_MODE && (
+                  <View style={styles.demoWalletPill}>
+                    <Text style={styles.demoWalletText}>Demo Wallet</Text>
+                  </View>
+                )}
               </View>
+              <Text style={styles.networkLabel}>
+                {DEMO_MODE ? 'Sepolia (Demo)' : network || 'Unknown Network'}
+              </Text>
             </View>
           </View>
 
@@ -509,114 +664,62 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </View>
       </Animated.View>
 
-      {/* Messages or Empty/Loading State */}
-      {loading && !refreshing ? (
-        <View style={[styles.centerContainer, { paddingBottom: inputBarHeight + (insets.bottom || 0) }]}>
-          <Animated.View style={{ opacity: loadingPulse }}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </Animated.View>
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading messages...</Text>
-        </View>
-      ) : messages.length === 0 ? (
-        <View style={[styles.centerContainer, { paddingBottom: inputBarHeight + (insets.bottom || 0) }]}>
-          <View style={[styles.emptyIconContainer, { backgroundColor: colors.backgroundTertiary }]}>
-            <Text style={styles.emptyIcon}>📭</Text>
-          </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No messages yet</Text>
-          <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
-            Be the first to post a message!
+      {!isConnected && (
+        <View style={[styles.connectBanner, { borderColor: colors.borderLight }]}
+        >
+          <Text style={[styles.connectBannerText, { color: colors.textSecondary }]}>
+            Connect your wallet to post messages.
           </Text>
           <Button
-            title="Post Message"
-            onPress={handlePostMessage}
-            size="large"
-          />
-        </View>
-      ) : (
-        <View style={styles.listWrapper}>
-          {sending && (
-            <Animated.View 
-              style={[
-                styles.postingBanner,
-                { transform: [{ scale: sendingScale }] }
-              ]}
-            >
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={[styles.postingText, { color: colors.textSecondary }]}>Posting on-chain...</Text>
-            </Animated.View>
-          )}
-          <Animated.FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={[
-              styles.listContent,
-              { paddingBottom: inputBarHeight + (insets.bottom || 0) + 24 },
-            ]}
-            showsVerticalScrollIndicator={true}
-            scrollEventThrottle={16}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollAnim } } }],
-              { useNativeDriver: false }
-            )}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={colors.primary}
-                colors={[colors.primary]}
-              />
-            }
+            title="Connect Wallet"
+            onPress={handleConnect}
+            size="small"
+            variant="primary"
+            icon="🔗"
           />
         </View>
       )}
 
-      {/* Fixed Input Bar */}
-      <View
-        style={[
-          styles.inputBarContainer,
-          { paddingBottom: Math.max(insets.bottom, theme.spacing.sm) },
-        ]}
-      >
-        {isTyping && (
-          <View style={styles.typingIndicator}>
-            <View style={styles.typingDot} />
-            <Text style={styles.typingText}>Typing...</Text>
+      {/* Recent Chats List */}
+      <View style={styles.listWrapper}>
+        {loading && !refreshing && (
+          <View style={styles.loadingInline}>
+            <Animated.View style={{ opacity: loadingPulse }}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </Animated.View>
+            <Text style={[styles.loadingTextInline, { color: colors.textSecondary }]}>
+              Syncing chats...
+            </Text>
           </View>
         )}
-        <ChatInput
-          value={messageInput}
-          onChangeText={handleInputChange}
-          onSend={handleSendMessage}
-          placeholder="Write a message..."
-          maxLength={MAX_MESSAGE_LENGTH}
-          showCharCounter
-          disabled={sending}
-          actionButton={{
-            icon: '😊',
-            onPress: handleEmojiPress,
-          }}
+        <Animated.SectionList
+          sections={chatSections}
+          keyExtractor={(item) => item.id}
+          renderItem={renderChatItem}
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            </View>
+          )}
+          contentContainerStyle={styles.chatListContent}
+          stickySectionHeadersEnabled={false}
+          ItemSeparatorComponent={() => <View style={styles.chatDivider} />}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollAnim } } }],
+            { useNativeDriver: false }
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
         />
       </View>
-
-      {/* Floating Action Button */}
-      {isConnected && (
-        <View
-          style={[
-            styles.fab,
-            { bottom: inputBarHeight + (insets.bottom || theme.spacing.md) + theme.spacing.lg },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.fabButton}
-            onPress={handlePostMessage}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.fabIcon}>✏️</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 };
@@ -630,34 +733,34 @@ const styles = StyleSheet.create({
   // Welcome Screen
   welcomeContainer: {
     flex: 1,
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xxl + 20,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xxl,
     paddingBottom: theme.spacing.xl,
   },
   welcomeHeader: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.xl,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.lg,
     shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 3,
   },
   logoIcon: {
-    fontSize: 40,
+    fontSize: 36,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
     textAlign: 'center',
@@ -667,7 +770,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
   },
 
   // Feature Grid
@@ -675,27 +778,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.xl,
   },
   featureCard: {
     width: '48%',
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: theme.colors.cardBorder,
   },
   featureIcon: {
-    fontSize: 32,
+    fontSize: 28,
     marginBottom: theme.spacing.md,
   },
   featureTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: theme.colors.text,
     textAlign: 'center',
@@ -711,8 +811,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderDark,
-    paddingTop: theme.spacing.xxl,
-    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
     paddingBottom: theme.spacing.md,
   },
   headerContent: {
@@ -758,6 +858,26 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontWeight: '500',
   },
+  demoWalletPill: {
+    marginLeft: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  demoWalletText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: theme.colors.textSecondary,
+  },
+  networkLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
   composeButton: {
     width: 44,
     height: 44,
@@ -783,6 +903,141 @@ const styles = StyleSheet.create({
   listWrapper: {
     flex: 1,
   },
+  chatListContent: {
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+  },
+  sectionHeader: {
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  chatDivider: {
+    height: 1,
+    backgroundColor: theme.colors.borderLight,
+    marginLeft: 64,
+  },
+  chatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  chatAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  chatAvatarText: {
+    fontSize: 22,
+  },
+  chatInfo: {
+    flex: 1,
+  },
+  chatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  chatMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginTop: 6,
+  },
+  chatName: {
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text,
+    flex: 1,
+    marginRight: theme.spacing.sm,
+  },
+  chatTime: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+  },
+  chatTypePill: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  chatTypeText: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textSecondary,
+  },
+  chatPreview: {
+    flex: 1,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  unreadBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadText: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textOnPrimary,
+  },
+  loadingInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+  },
+  loadingTextInline: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+  connectBanner: {
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    backgroundColor: theme.colors.backgroundSecondary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.sm,
+  },
+  connectBannerText: {
+    fontSize: 12,
+    fontWeight: '500',
+    flex: 1,
+  },
   postingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -806,6 +1061,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderTopWidth: 1,
     borderTopColor: theme.colors.borderDark,
+  },
+  inputHelperText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
   },
   typingIndicator: {
     flexDirection: 'row',
@@ -833,6 +1094,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: theme.spacing.md,
   },
+  messageContainerRight: {
+    justifyContent: 'flex-end',
+  },
 
   // Avatar
   avatar: {
@@ -853,11 +1117,17 @@ const styles = StyleSheet.create({
   messageBubbleWrapper: {
     flex: 1,
   },
+  messageBubbleWrapperRight: {
+    alignItems: 'flex-end',
+  },
   senderInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
     marginBottom: 4,
+  },
+  senderInfoRight: {
+    justifyContent: 'flex-end',
   },
   senderAddress: {
     fontSize: 13,
@@ -867,6 +1137,9 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 11,
     color: theme.colors.textSecondary,
+  },
+  timestampRight: {
+    textAlign: 'right',
   },
   messageBubble: {
     paddingHorizontal: theme.spacing.md,
@@ -887,6 +1160,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: theme.colors.text,
   },
+  messageTextSent: {
+    color: theme.colors.textOnPrimary,
+  },
   editedLabel: {
     fontSize: 11,
     color: theme.colors.textSecondary,
@@ -900,6 +1176,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing.sm,
+  },
+  badgeContainerRight: {
+    justifyContent: 'flex-end',
   },
   sentimentBadge: {
     flexDirection: 'row',
@@ -924,6 +1203,21 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: theme.colors.borderDark,
     marginVertical: theme.spacing.md,
+  },
+  dateDivider: {
+    alignSelf: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+    marginBottom: theme.spacing.md,
+  },
+  dateDividerText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
   },
 
   // Center Container (Empty/Loading)
@@ -964,7 +1258,6 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xl,
     lineHeight: 20,
   },
-
   // FAB (Floating Action Button)
   fab: {
     position: 'absolute',

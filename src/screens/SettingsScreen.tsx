@@ -121,140 +121,146 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Settings
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Manage your app preferences
-          </Text>
+          <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
         </View>
 
         {/* Appearance */}
-        <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Appearance
-          </Text>
-          
-          {renderSettingItem(
-            '🌙',
-            'Dark Mode',
-            isDarkMode ? 'Currently using dark theme' : 'Currently using light theme',
-            handleThemeToggle,
-            <Switch
-              value={isDarkMode}
-              onValueChange={handleThemeToggle}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={isDarkMode ? colors.primary : colors.backgroundTertiary}
-            />
-          )}
-        </Card>
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Appearance</Text>
+          <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+            {renderSettingItem(
+              '🌙',
+              'Dark Mode',
+              isDarkMode ? 'Using dark theme' : 'Using light theme',
+              handleThemeToggle,
+              <Switch
+                value={isDarkMode}
+                onValueChange={handleThemeToggle}
+                trackColor={{ false: colors.borderDark, true: colors.primary }}
+                thumbColor={isDarkMode ? colors.primary : colors.backgroundTertiary}
+              />
+            )}
+          </View>
+        </View>
 
-        {/* Demo Mode */}
-        <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Development
-          </Text>
-          
-          {renderSettingItem(
-            '🎭',
-            'Demo Mode',
-            'Use mock wallet & blockchain data',
-            handleDemoModeToggle,
-            <Switch
-              value={demoModeEnabled}
-              onValueChange={handleDemoModeToggle}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={demoModeEnabled ? colors.primary : colors.backgroundTertiary}
-            />
-          )}
-        </Card>
+        {/* Notifications & Demo */}
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Preferences</Text>
+          <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+            {renderSettingItem(
+              '🔔',
+              'Notifications',
+              notificationsEnabled ? 'Enabled' : 'Disabled',
+              handleNotificationsToggle,
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleNotificationsToggle}
+                trackColor={{ false: colors.borderDark, true: colors.primary }}
+                thumbColor={notificationsEnabled ? colors.primary : colors.backgroundTertiary}
+              />
+            )}
+            <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
+            {renderSettingItem(
+              '🎭',
+              'Demo Mode',
+              demoModeEnabled ? 'Enabled' : 'Disabled',
+              handleDemoModeToggle,
+              <Switch
+                value={demoModeEnabled}
+                onValueChange={handleDemoModeToggle}
+                trackColor={{ false: colors.borderDark, true: colors.primary }}
+                thumbColor={demoModeEnabled ? colors.primary : colors.backgroundTertiary}
+              />
+            )}
+          </View>
+        </View>
 
-        {/* Notifications */}
-        <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Notifications
-          </Text>
-          
-          {renderSettingItem(
-            '🔔',
-            'Enable Notifications',
-            'Receive push notifications for new messages',
-            handleNotificationsToggle,
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={handleNotificationsToggle}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={notificationsEnabled ? colors.primary : colors.backgroundTertiary}
-            />
-          )}
-        </Card>
+        {/* Data & Storage */}
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Data</Text>
+          <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+            {renderSettingItem(
+              '🗑️',
+              'Clear Cache',
+              'Remove locally stored data',
+              handleClearCache,
+              isClearingCache ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : undefined
+            )}
+          </View>
+        </View>
 
-        {/* Storage */}
-        <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Storage
-          </Text>
-          
-          {renderSettingItem(
-            '🗑️',
-            'Clear Cache',
-            'Remove locally stored data',
-            handleClearCache,
-            isClearingCache ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : undefined
-          )}
-        </Card>
+        {/* DAO Moderation (Future Feature) */}
+        <View style={[styles.sectionGroup, styles.disabledGroup]}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>DAO Moderation</Text>
+          <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+            {renderSettingItem(
+              '🤝',
+              'Community Moderation',
+              'Vote on decisions',
+              () => {},
+              <Text style={[styles.lockIcon, { color: colors.textSecondary }]}>🔒</Text>
+            )}
+            <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
+            {renderSettingItem(
+              '🏛️',
+              'DAO Treasury',
+              'Manage treasury',
+              () => {},
+              <Text style={[styles.lockIcon, { color: colors.textSecondary }]}>🔒</Text>
+            )}
+            <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
+            {renderSettingItem(
+              '📊',
+              'Governance',
+              'Create proposals',
+              () => {},
+              <Text style={[styles.lockIcon, { color: colors.textSecondary }]}>🔒</Text>
+            )}
+          </View>
+        </View>
 
-        {/* About Project */}
-        <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            About Project
-          </Text>
-          
-          {renderSettingItem(
-            '🏗️',
-            'Chatify',
-            'Decentralized blockchain chat',
-            () => {}
-          )}
-
-          <View style={[styles.divider, { backgroundColor: colors.borderDark }]} />
-
-          {renderSettingItem(
-            '📦',
-            'Version',
-            '1.0.0',
-            () => Alert.alert('Version Info', 'Chatify v1.0.0\nBlockchain-Powered Secure Messaging')
-          )}
-
-          <View style={[styles.divider, { backgroundColor: colors.borderDark }]} />
-
-          {renderSettingItem(
-            '⛓️',
-            'Technology Stack',
-            'React Native • Ethereum • Web3',
-            () => Alert.alert('Tech Stack', 'React Native\nExpo\nEtherverse & Smart Contracts\nAI Sentiment Analysis')
-          )}
-
-          <View style={[styles.divider, { backgroundColor: colors.borderDark }]} />
-
-          {renderSettingItem(
-            '🔗',
-            'Documentation',
-            'View project documentation',
-            () => Alert.alert('Documentation', 'See README.md for complete documentation and setup instructions')
-          )}
-
-          <View style={[styles.divider, { backgroundColor: colors.borderDark }]} />
-
-          {renderSettingItem(
-            '💡',
-            'Features',
-            'Message sentiment • Safety analysis • Wallet integration',
-            () => Alert.alert('Key Features', '✓ Blockchain messaging\n✓ AI sentiment analysis\n✓ Wallet authentication\n✓ Real-time updates\n✓ Modern UI/UX')
-          )}
-        </Card>
+        {/* About & Info */}
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>About</Text>
+          <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+            {renderSettingItem(
+              '📚',
+              'About Chatify',
+              'Features & roadmap',
+              () => navigation.navigate('About' as any)
+            )}
+            <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
+            {renderSettingItem(
+              '📦',
+              'Version',
+              '1.0.0',
+              () => Alert.alert('Version Info', 'Chatify v1.0.0\nBlockchain-Powered Secure Messaging')
+            )}
+            <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
+            {renderSettingItem(
+              '⛓️',
+              'Tech Stack',
+              'React Native • Web3',
+              () => Alert.alert('Tech Stack', 'React Native\nExpo\nEtherverse & Smart Contracts\nAI Sentiment Analysis')
+            )}
+            <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
+            {renderSettingItem(
+              '🔗',
+              'Documentation',
+              'View docs',
+              () => Alert.alert('Documentation', 'See README.md for complete documentation and setup instructions')
+            )}
+            <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
+            {renderSettingItem(
+              '💡',
+              'Features',
+              'Blockchain • AI • Web3',
+              () => Alert.alert('Key Features', '✓ Blockchain messaging\n✓ AI sentiment analysis\n✓ Wallet authentication\n✓ Real-time updates\n✓ Modern UI/UX')
+            )}
+          </View>
+        </View>
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -275,38 +281,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
   },
 
   // Header
   header: {
-    marginBottom: 32,
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
+    marginBottom: 0,
   },
 
   // Sections
-  section: {
-    marginBottom: 24,
+  sectionGroup: {
+    marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 13,
+  disabledGroup: {
+    opacity: 0.6,
+  },
+  sectionHeader: {
+    fontSize: 11,
     fontWeight: '700',
-    marginBottom: 8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  settingsCard: {
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
   },
   settingLeft: {
     flexDirection: 'row',
@@ -314,39 +327,76 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingIcon: {
-    fontSize: 24,
-    marginRight: 16,
+    fontSize: 18,
+    marginRight: 12,
+    width: 20,
+    textAlign: 'center',
   },
   settingContent: {
     flex: 1,
   },
   settingTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   settingDescription: {
-    fontSize: 13,
+    fontSize: 12,
   },
   chevron: {
-    fontSize: 24,
+    fontSize: 18,
     marginLeft: 8,
+  },
+  itemDivider: {
+    height: 1,
+    marginHorizontal: 14,
+  },
+  lockIcon: {
+    fontSize: 14,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   divider: {
     height: 1,
   },
+  disabledSection: {
+    opacity: 0.6,
+  },
+  futureFeatureHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  comingSoonLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  disabledIcon: {
+    fontSize: 14,
+  },
 
   // Footer
   footer: {
-    marginTop: 48,
-    paddingTop: 32,
+    marginTop: 28,
+    paddingTop: 20,
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 13,
+    fontSize: 12,
     marginBottom: 4,
   },
   footerDate: {
-    fontSize: 12,
+    fontSize: 11,
   },
 });

@@ -68,6 +68,16 @@ const getNetworkName = (chainId: number | null): string | null => {
   return chainId ? networks[chainId] || `Chain ${chainId}` : null;
 };
 
+const getDemoNetworkName = (chainId: number | null): string | null => {
+  if (!chainId) return null;
+  return chainId === DEFAULT_CHAIN_ID ? 'Sepolia (Demo)' : `Chain ${chainId} (Demo)`;
+};
+
+const simulateDemoConnectDelay = async (): Promise<void> => {
+  const delayMs = 1000 + Math.floor(Math.random() * 1000);
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+};
+
 /**
  * Format wallet address for display
  */
@@ -101,7 +111,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
         setAccount(state.walletAddress);
         setIsConnected(state.isConnected);
         setChainId(state.chainId);
-        setNetwork(state.network);
+        setNetwork(DEMO_MODE ? getDemoNetworkName(state.chainId) : state.network);
         
         // Load wallet data
         const wallet = await getOrCreateDemoWallet();
@@ -125,7 +135,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
 
       if (DEMO_MODE) {
         // Demo mode: generate or retrieve stored demo wallet
-        await simulateNetworkDelay();
+        await simulateDemoConnectDelay();
         
         // Get or create demo wallet with persistent storage
         const wallet = await getOrCreateDemoWallet('Demo User');
@@ -135,7 +145,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
         setAccount(wallet.address);
         setIsConnected(true);
         setChainId(DEFAULT_CHAIN_ID);
-        setNetwork(getNetworkName(DEFAULT_CHAIN_ID));
+        setNetwork(getDemoNetworkName(DEFAULT_CHAIN_ID));
         
         // Update last connected timestamp
         await updateWalletLastConnected();
@@ -145,13 +155,13 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
           isConnected: true,
           walletAddress: wallet.address,
           chainId: DEFAULT_CHAIN_ID,
-          network: getNetworkName(DEFAULT_CHAIN_ID),
+          network: getDemoNetworkName(DEFAULT_CHAIN_ID),
           connectedAt: Date.now(),
         });
         
         console.log('✓ Demo wallet connected:', formatAddress(wallet.address));
         console.log('  - Address:', wallet.address);
-        console.log('  - Network:', getNetworkName(DEFAULT_CHAIN_ID));
+        console.log('  - Network:', getDemoNetworkName(DEFAULT_CHAIN_ID));
         return wallet.address;
       }
 

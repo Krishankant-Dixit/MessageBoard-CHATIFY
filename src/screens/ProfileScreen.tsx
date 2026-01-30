@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useWeb3, formatAddress } from '../context/Web3Context';
 import { Card, Button } from '../components';
 import { DEMO_MODE } from '../utils/constants';
+import { theme } from '../theme';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<any, 'Profile'>;
 
@@ -77,8 +78,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   if (!isConnected || !account) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
         <View style={[styles.centerContainer, { paddingTop: insets.top }]}>
           <Text style={styles.emptyIcon}>👤</Text>
           <Text style={styles.emptyTitle}>Profile Unavailable</Text>
@@ -94,84 +95,148 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const displayName = `Chatify User ${initials}`;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 48 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 48 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Header */}
-        <View style={styles.header}>
-          {/* Large Avatar */}
-          <View style={[styles.avatarLarge, { backgroundColor: avatarColor }]}>
+        {/* Profile Header Card */}
+        <View style={styles.profileCard}>
+          {/* Avatar */}
+          <View style={[styles.avatarContainer, { backgroundColor: avatarColor }]}>
             <Text style={styles.avatarInitials}>{initials}</Text>
           </View>
 
-          {/* Username */}
-          <Text style={styles.userName}>{displayName}</Text>
+          {/* Profile Info */}
+          <Text style={styles.displayName}>{displayName}</Text>
+          
+          <TouchableOpacity 
+            style={styles.addressContainer}
+            onPress={handleCopyAddress}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.addressLabel}>Wallet Address</Text>
+            <Text style={styles.addressValue}>{formatAddress(account)}</Text>
+            <Text style={styles.copyHint}>Tap to copy</Text>
+          </TouchableOpacity>
 
           {/* Demo Badge */}
           {DEMO_MODE && (
-            <View style={[styles.demoBadge, { backgroundColor: colors.warning + '20' }]}>
-              <Text style={[styles.demoBadgeText, { color: colors.warning }]}>🎭 Demo Identity</Text>
+            <View style={styles.demoBadgeNew}>
+              <Text style={styles.demoBadgeIcon}>🎭</Text>
+              <Text style={styles.demoBadgeText}>Demo Identity</Text>
             </View>
           )}
         </View>
 
-        {/* Wallet Section */}
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Wallet Address</Text>
-          
-          <View style={styles.addressBox}>
-            <Text style={styles.addressText}>{account}</Text>
-            <TouchableOpacity onPress={handleCopyAddress} style={styles.copyBtn}>
-              <Text style={styles.copyBtnIcon}>📋</Text>
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Account</Text>
+          <View style={styles.sectionCard}>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={handleCopyAddress}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <Text style={styles.menuItemIcon}>📋</Text>
+                <View>
+                  <Text style={styles.menuItemTitle}>Full Address</Text>
+                  <Text style={styles.menuItemSubtitle}>{account}</Text>
+                </View>
+              </View>
+              <Text style={styles.menuItemAction}>→</Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          <TouchableOpacity onPress={handleCopyAddress} style={styles.copyFullBtn}>
-            <Text style={styles.copyFullBtnIcon}>📋</Text>
-            <Text style={styles.copyFullBtnText}>Copy Address</Text>
-          </TouchableOpacity>
-        </Card>
+        {/* Network Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Connection</Text>
+          <View style={styles.sectionCard}>
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <Text style={styles.menuItemIcon}>🌐</Text>
+                <View>
+                  <Text style={styles.menuItemTitle}>Status</Text>
+                  <View style={styles.statusBadgeNew}>
+                    <View style={[styles.statusDotNew, { backgroundColor: theme.colors.online }]} />
+                    <Text style={styles.statusTextNew}>Connected</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
 
-        {/* Network Status */}
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Network Status</Text>
+            <View style={styles.menuDivider} />
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Status</Text>
-            <View style={styles.statusBadge}>
-              <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
-              <Text style={[styles.statusText, { color: colors.success }]}>Connected</Text>
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <Text style={styles.menuItemIcon}>⛓️</Text>
+                <View>
+                  <Text style={styles.menuItemTitle}>Network</Text>
+                  <Text style={styles.menuItemValue}>{network || 'Unknown'}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.menuDivider} />
+
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <Text style={styles.menuItemIcon}>🔗</Text>
+                <View>
+                  <Text style={styles.menuItemTitle}>Chain ID</Text>
+                  <Text style={styles.menuItemValue}>{chainId || '-'}</Text>
+                </View>
+              </View>
             </View>
           </View>
+        </View>
 
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Network</Text>
-            <Text style={styles.infoValue}>{network || 'Unknown'}</Text>
+        {/* ENS Username (Future Feature) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Username</Text>
+          <View style={[styles.sectionCard, styles.disabledCard]}>
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <Text style={styles.menuItemIcon}>🔗</Text>
+                <View>
+                  <Text style={[styles.menuItemTitle, styles.disabledText]}>ENS Username</Text>
+                  <Text style={[styles.menuItemSubtitle, styles.disabledSubtext]}>Connect your ENS domain</Text>
+                </View>
+              </View>
+              <Text style={[styles.comingSoonBadge, styles.badgeSmall]}>Coming Soon</Text>
+            </View>
           </View>
+        </View>
 
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Chain ID</Text>
-            <Text style={styles.infoValue}>{chainId || '-'}</Text>
+        {/* Private Rooms (Future Feature) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Privacy</Text>
+          <View style={[styles.sectionCard, styles.disabledCard]}>
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <Text style={styles.menuItemIcon}>🔒</Text>
+                <View>
+                  <Text style={[styles.menuItemTitle, styles.disabledText]}>Private Rooms</Text>
+                  <Text style={[styles.menuItemSubtitle, styles.disabledSubtext]}>Encrypted rooms with users</Text>
+                </View>
+              </View>
+              <Text style={[styles.comingSoonBadge, styles.badgeSmall]}>Coming Soon</Text>
+            </View>
           </View>
-        </Card>
+        </View>
 
         {/* Actions */}
         <View style={styles.actions}>
-          <Button
-            title="Disconnect Wallet"
+          <TouchableOpacity 
+            style={styles.disconnectButton}
             onPress={handleDisconnect}
-            variant="outline"
-            size="large"
-            fullWidth
-            style={styles.disconnectBtn}
-          />
+            activeOpacity={0.8}
+          >
+            <Text style={styles.disconnectButtonText}>Disconnect Wallet</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -183,7 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
   },
   centerContainer: {
     flex: 1,
@@ -192,7 +257,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
   },
   emptyIcon: {
-    fontSize: 64,
+    fontSize: 56,
     marginBottom: theme.spacing.lg,
   },
   emptyTitle: {
@@ -206,151 +271,224 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
     lineHeight: 20,
   },
 
-  // Header
-  header: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
-  },
-  avatarLarge: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: 'center',
+  // Profile Header Card
+  profileCard: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
     alignItems: 'center',
     marginBottom: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  avatarContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   avatarInitials: {
-    fontSize: 48,
-    fontWeight: '700',
+    fontSize: 40,
+    fontWeight: theme.typography.fontWeight.bold,
     color: '#FFFFFF',
   },
-  userName: {
-    fontSize: 22,
-    fontWeight: '700',
+  displayName: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
     color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-    textAlign: 'center',
+    marginBottom: theme.spacing.md,
   },
-  demoBadge: {
+  
+  // Address Container
+  addressContainer: {
+    width: '100%',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.backgroundTertiary,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+  },
+  addressLabel: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.fontWeight.medium,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  addressValue: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text,
+    fontWeight: theme.typography.fontWeight.semibold,
+    fontFamily: 'monospace',
+    marginBottom: 2,
+  },
+  copyHint: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+
+  // Demo Badge New
+  demoBadgeNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.primary + '15',
+    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: theme.colors.warning,
+    borderColor: theme.colors.primary + '30',
+  },
+  demoBadgeIcon: {
+    fontSize: 12,
   },
   demoBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.primary,
   },
 
   // Sections
   section: {
     marginBottom: theme.spacing.lg,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
+  sectionHeader: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  sectionCard: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+    overflow: 'hidden',
+  },
+  disabledCard: {
+    opacity: 0.6,
   },
 
-  // Address Box
-  addressBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.backgroundTertiary,
-    borderRadius: theme.borderRadius.lg,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  addressText: {
-    flex: 1,
-    fontSize: 12,
-    color: theme.colors.text,
-    fontFamily: 'monospace',
-    fontWeight: '500',
-  },
-  copyBtn: {
-    padding: theme.spacing.sm,
-    marginLeft: theme.spacing.sm,
-  },
-  copyBtnIcon: {
-    fontSize: 18,
-  },
-  copyFullBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    backgroundColor: theme.colors.primary + '15',
-  },
-  copyFullBtnIcon: {
-    fontSize: 16,
-  },
-  copyFullBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: theme.colors.primary,
-  },
-
-  // Info Rows
-  infoRow: {
+  // Menu Items
+  menuItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
   },
-  infoLabel: {
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    fontWeight: '500',
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: theme.spacing.md,
   },
-  infoValue: {
-    fontSize: 13,
+  menuItemIcon: {
+    fontSize: 18,
+    width: 28,
+    textAlign: 'center',
+  },
+  menuItemTitle: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
     color: theme.colors.text,
-    fontWeight: '600',
+    marginBottom: 1,
   },
-  divider: {
+  menuItemSubtitle: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginTop: 1,
+  },
+  menuItemValue: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.fontWeight.semibold,
+    marginTop: 1,
+  },
+  menuItemAction: {
+    fontSize: theme.typography.fontSize.lg,
+    color: theme.colors.textSecondary,
+    marginLeft: theme.spacing.md,
+  },
+  menuDivider: {
     height: 1,
-    backgroundColor: theme.colors.borderDark,
-    marginVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.borderLight,
+    marginHorizontal: theme.spacing.md,
   },
 
   // Status
-  statusBadge: {
+  statusBadgeNew: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.xs,
+    marginTop: 2,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  statusDotNew: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '600',
+  statusTextNew: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.online,
+  },
+
+  // Coming Soon Badge
+  comingSoonBadge: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.full,
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textSecondary,
+    backgroundColor: theme.colors.backgroundTertiary,
+    overflow: 'hidden',
+  },
+  badgeSmall: {
+    fontSize: theme.typography.fontSize.xs,
+  },
+
+  // Disabled Text
+  disabledText: {
+    color: theme.colors.textSecondary,
+  },
+  disabledSubtext: {
+    color: theme.colors.borderLight,
   },
 
   // Actions
   actions: {
     marginTop: theme.spacing.lg,
+    gap: theme.spacing.md,
   },
-  disconnectBtn: {
+  disconnectButton: {
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1.5,
     borderColor: theme.colors.error,
+    alignItems: 'center',
+  },
+  disconnectButtonText: {
+    fontSize: theme.typography.fontSize.base,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.error,
   },
 });

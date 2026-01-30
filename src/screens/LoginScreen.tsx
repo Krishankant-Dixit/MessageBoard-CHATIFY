@@ -235,43 +235,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
   },
   walletHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
   },
   headerSpacer: {
     flex: 1,
   },
   welcomeScrollContent: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xxl,
-    paddingBottom: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
+    paddingBottom: theme.spacing.lg,
     justifyContent: 'center',
   },
   contentWrapper: {
     alignItems: 'center',
   },
   scrollContent: {
-    padding: theme.spacing.xl,
+    padding: theme.spacing.lg,
     paddingTop: theme.spacing.md,
   },
   walletScrollContent: {
-    padding: theme.spacing.xl,
+    padding: theme.spacing.lg,
     paddingTop: theme.spacing.md,
   },
   bottomSection: {
-    paddingHorizontal: theme.spacing.xl,
-    paddingBottom: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.lg,
     backgroundColor: theme.colors.background,
   },
   title: {
-    fontSize: theme.typography.fontSize.xxxl,
+    fontSize: theme.typography.fontSize.display,
     fontWeight: theme.typography.fontWeight.bold,
     color: theme.colors.text,
     textAlign: 'center',
@@ -281,25 +281,25 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
     lineHeight: theme.typography.lineHeight.relaxed * theme.typography.fontSize.md,
   },
   featureContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginTop: theme.spacing.xxl,
+    marginTop: theme.spacing.xl,
   },
   feature: {
     alignItems: 'center',
   },
   featureIcon: {
-    fontSize: 40,
+    fontSize: 36,
     marginBottom: theme.spacing.sm,
   },
   featureText: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.fontSize.sm,
+    fontSize: theme.typography.fontSize.xs,
   },
   methodTitle: {
     fontSize: theme.typography.fontSize.lg,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   },
   methodButton: {
     width: '100%',
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   infoText: {
     fontSize: theme.typography.fontSize.sm,
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   formSubtitle: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   formCard: {
     marginBottom: theme.spacing.lg,
@@ -339,18 +339,18 @@ const styles = StyleSheet.create({
   },
   walletCard: {
     alignItems: 'center',
-    padding: theme.spacing.xl,
+    padding: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
   },
   walletIcon: {
-    fontSize: 80,
+    fontSize: 72,
     marginBottom: theme.spacing.lg,
   },
   walletText: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   connectButton: {
     width: '100%',

@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.md,
-    paddingTop: theme.spacing.xxl,
+    paddingTop: theme.spacing.lg,
   },
   header: {
     marginBottom: theme.spacing.lg,
@@ -193,13 +193,13 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.fontWeight.semibold,
   },
   title: {
-    fontSize: theme.typography.fontSize.xxl,
+    fontSize: theme.typography.fontSize.xl,
     fontWeight: theme.typography.fontWeight.bold,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    fontSize: theme.typography.fontSize.md,
+    fontSize: theme.typography.fontSize.base,
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.lg,
   },
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   },
   typeButton: {
     flex: 1,
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
     borderRadius: theme.borderRadius.md,
     backgroundColor: theme.colors.backgroundTertiary,
     alignItems: 'center',
@@ -233,14 +233,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.backgroundSecondary,
   },
   typeIcon: {
-    fontSize: 32,
-    marginBottom: theme.spacing.sm,
+    fontSize: 28,
+    marginBottom: theme.spacing.xs,
   },
   typeTitle: {
-    fontSize: theme.typography.fontSize.sm,
+    fontSize: theme.typography.fontSize.xs,
     fontWeight: theme.typography.fontWeight.semibold,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
+    marginBottom: 2,
   },
   typeTextActive: {
     color: theme.colors.primary,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.lg,
   },
   infoTitle: {
-    fontSize: theme.typography.fontSize.md,
+    fontSize: theme.typography.fontSize.base,
     fontWeight: theme.typography.fontWeight.semibold,
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: theme.spacing.md,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   cancelButton: {
     flex: 1,

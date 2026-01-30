@@ -60,10 +60,10 @@ const styles = StyleSheet.create({
   },
   label: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.fontSize.sm,
+    fontSize: theme.typography.fontSize.xs,
     marginBottom: theme.spacing.sm,
     fontWeight: theme.typography.fontWeight.medium,
-    letterSpacing: theme.typography.letterSpacing.wide,
+    letterSpacing: theme.typography.letterSpacing.normal,
   },
   inputWrapper: {
     position: 'relative',
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   icon: {
     position: 'absolute',
     left: theme.spacing.md,
-    fontSize: theme.typography.fontSize.lg,
+    fontSize: theme.typography.fontSize.md,
     zIndex: 1,
   },
   input: {
@@ -82,9 +82,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
     color: theme.colors.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '400',
-    minHeight: 52,
+    minHeight: 48,
   },
   default: {
     backgroundColor: theme.colors.inputBackground,
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   inputWithIcon: {
-    paddingLeft: theme.spacing.xxl + theme.spacing.sm,
+    paddingLeft: theme.spacing.xl + theme.spacing.md,
   },
   inputFocused: {
     borderColor: theme.colors.inputFocusBorder,

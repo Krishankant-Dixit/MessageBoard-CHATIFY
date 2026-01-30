@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,20 @@ import {
   Platform,
   Alert,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { MessageCard, BackButton, ProfileAvatar } from '../components';
+import { BackButton, ProfileAvatar } from '../components';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { useWeb3 } from '../context/Web3Context';
+import { useFadeInAnimation } from '../hooks';
 import { Message } from '../contracts/MessageBoard';
 import { MessageEdit, formatTimestamp, formatAddress } from '../utils/helpers';
+import { DEMO_MODE } from '../utils/constants';
 
 type ChatRoomScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ChatRoom'>;
 type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
@@ -32,11 +36,134 @@ interface ChatRoomScreenProps {
 export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, route }) => {
   const { roomId, roomName } = route.params;
   const { user } = useAuth();
+  const { isConnected } = useWeb3();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+
+  const chatType = (route.params as any)?.chatType as 'personal' | 'group' | 'company' | undefined;
+  const chatAvatar = (route.params as any)?.chatAvatar as string | undefined;
+  const chatTypeLabel = chatType === 'company' ? 'Company' : chatType === 'group' ? 'Group' : 'Personal';
+  const isGroupChat = chatType === 'group' || chatType === 'company';
+
+  const getSentimentLabel = (sentiment?: Message['sentiment']): string => {
+    switch (sentiment) {
+      case 'positive':
+        return 'Positive';
+      case 'negative':
+        return 'Negative';
+      default:
+        return 'Neutral';
+    }
+  };
+
+  const getSentimentColor = (sentiment?: Message['sentiment']): string => {
+    switch (sentiment) {
+      case 'positive':
+        return theme.colors.success;
+      case 'negative':
+        return theme.colors.error;
+      default:
+        return theme.colors.warning;
+    }
+  };
+
+  const getSafetyLabel = (category?: Message['safetyCategory']): string => {
+    switch (category) {
+      case 'spam':
+        return 'Spam';
+      case 'abuse':
+        return 'Abuse';
+      case 'sensitive':
+        return 'Sensitive';
+      default:
+        return 'Safe';
+    }
+  };
+
+  const getSafetyColor = (category?: Message['safetyCategory']): string => {
+    switch (category) {
+      case 'spam':
+      case 'abuse':
+        return theme.colors.error;
+      case 'sensitive':
+        return theme.colors.warning;
+      default:
+        return theme.colors.success;
+    }
+  };
+
+  const MessageRow: React.FC<{
+    item: Message;
+    isMine: boolean;
+    showSenderLabel: boolean;
+    onLongPress: () => void;
+  }> = ({ item, isMine, showSenderLabel, onLongPress }) => {
+    const fadeAnim = useFadeInAnimation(250);
+
+    return (
+      <Animated.View style={{ opacity: fadeAnim }}>
+        <TouchableOpacity onLongPress={onLongPress}>
+          <View style={[styles.messageRow, isMine ? styles.messageRowMine : styles.messageRowOther]}>
+            <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}>
+              {showSenderLabel && (
+                <Text style={styles.senderLabel} numberOfLines={1}>
+                  {formatAddress(item.sender)}
+                </Text>
+              )}
+              <Text style={[styles.messageText, isMine ? styles.messageTextMine : styles.messageTextOther]}>
+                {item.content}
+              </Text>
+              {(item.sentiment || item.safetyCategory) && (
+                <View style={styles.badgeRow}>
+                  {item.sentiment && (
+                    <View
+                      style={[
+                        styles.badgePill,
+                        { borderColor: getSentimentColor(item.sentiment) },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.badgeText,
+                          { color: getSentimentColor(item.sentiment) },
+                        ]}
+                      >
+                        {getSentimentLabel(item.sentiment)}
+                      </Text>
+                    </View>
+                  )}
+                  {item.safetyCategory && (
+                    <View
+                      style={[
+                        styles.badgePill,
+                        { borderColor: getSafetyColor(item.safetyCategory) },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.badgeText,
+                          { color: getSafetyColor(item.safetyCategory) },
+                        ]}
+                      >
+                        {getSafetyLabel(item.safetyCategory)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+              <View style={styles.metaRow}>
+                {item.isEdited && <Text style={styles.editedTag}>edited</Text>}
+                <Text style={styles.timeText}>{formatTimestamp(item.timestamp)}</Text>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   // Demo messages
   const demoMessages: Message[] = [
@@ -49,6 +176,8 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
       isPrivate: false,
       isEdited: false,
       editCount: 0,
+      sentiment: 'positive',
+      safetyCategory: 'safe',
     },
     {
       id: 2,
@@ -59,6 +188,8 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
       isPrivate: false,
       isEdited: false,
       editCount: 0,
+      sentiment: 'neutral',
+      safetyCategory: 'safe',
     },
     {
       id: 3,
@@ -69,6 +200,8 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
       isPrivate: false,
       isEdited: true,
       editCount: 1,
+      sentiment: 'positive',
+      safetyCategory: 'safe',
       editHistory: [
         {
           oldContent: 'All messages are stored on blockchain',
@@ -188,9 +321,13 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isMine = isMyMessage(item.sender);
+    const showSenderLabel = !isMine && isGroupChat;
 
     return (
-      <TouchableOpacity
+      <MessageRow
+        item={item}
+        isMine={isMine}
+        showSenderLabel={showSenderLabel}
         onLongPress={() => {
           if (isMine) {
             Alert.alert(
@@ -206,13 +343,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
             showEditHistory(item);
           }
         }}
-      >
-        <MessageCard
-          message={item}
-          variant={isMine ? 'sent' : 'received'}
-          showSender={!isMine}
-        />
-      </TouchableOpacity>
+      />
     );
   };
 
@@ -225,26 +356,38 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       
       {/* Custom Header */}
-      <View style={[styles.header, { paddingTop: insets.top || theme.spacing.md }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, theme.spacing.md) }]}>
         <View style={styles.headerLeft}>
           <BackButton onPress={() => navigation.goBack()} />
-          
           <View style={styles.roomInfo}>
             <View style={styles.roomIconContainer}>
-              <Text style={styles.roomIcon}>💬</Text>
+              <Text style={styles.roomIcon}>{chatAvatar || '💬'}</Text>
             </View>
-            <View>
-              <Text style={styles.roomTitle}>{roomName}</Text>
-              <View style={styles.statusBadge}>
-                <View style={styles.onlineDot} />
-                <Text style={styles.statusText}>Active</Text>
+            <View style={styles.roomDetails}>
+              <Text style={styles.roomTitle} numberOfLines={1}>{roomName}</Text>
+              <View style={styles.typeBadge}>
+                <Text style={styles.typeBadgeText}>{chatTypeLabel}</Text>
               </View>
             </View>
           </View>
         </View>
         
-        <ProfileAvatar />
+        <View style={styles.headerRight}>
+          <View style={styles.connectionStatus}>
+            <View style={[styles.statusDot, styles.statusDotActive]} />
+            <Text style={styles.connectionText}>Connected</Text>
+          </View>
+          <ProfileAvatar />
+        </View>
       </View>
+
+      {DEMO_MODE && (
+        <View style={styles.demoBanner}>
+          <Text style={styles.demoBannerText}>
+            🎯 Demo Mode: Blockchain delivery and AI insights are simulated for the hackathon demo.
+          </Text>
+        </View>
+      )}
 
       {/* Messages List */}
       <View style={styles.chatBackground}>
@@ -255,6 +398,15 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
           contentContainerStyle={styles.messagesList}
           inverted={false}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View style={[styles.futureFeatureBanner, { backgroundColor: theme.colors.backgroundSecondary }]}>
+              <Text style={styles.futureFeatureIcon}>📝</Text>
+              <View style={styles.futureFeatureContent}>
+                <Text style={[styles.futureFeatureTitle, { color: theme.colors.text }]}>Edit History (Coming Soon)</Text>
+                <Text style={[styles.futureFeatureDesc, { color: theme.colors.textSecondary }]}>View full edit audit trail for all messages</Text>
+              </View>
+            </View>
+          }
         />
       </View>
 
@@ -278,36 +430,45 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
           </View>
         )}
         
-        <View style={styles.inputRow}>
-          <TouchableOpacity style={styles.attachButton}>
-            <Text style={styles.attachIcon}>+</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="Type a message..."
-              placeholderTextColor={theme.colors.inputPlaceholder}
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={500}
-            />
+        <View style={styles.composerWrapper}>
+          {!isConnected && (
+            <Text style={styles.inputHelperText}>Connect wallet to send messages.</Text>
+          )}
+          <View style={styles.inputRow}>
+            <TouchableOpacity 
+              style={styles.composerIconButton}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.composerIconEmoji}>😊</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.inputComposer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Message"
+                placeholderTextColor={theme.colors.inputPlaceholder}
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={500}
+                editable={isConnected}
+              />
+            </View>
+            
+            <TouchableOpacity
+              style={[
+                styles.sendButtonComposer,
+                (!inputText.trim() || !isConnected) && styles.sendButtonComposerDisabled
+              ]}
+              onPress={editingMessageId ? handleSaveEdit : handleSend}
+              disabled={!inputText.trim() || !isConnected}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.sendButtonComposerText}>
+                {editingMessageId ? '✓' : '➤'}
+              </Text>
+            </TouchableOpacity>
           </View>
-          
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !inputText.trim() && styles.sendButtonDisabled
-            ]}
-            onPress={editingMessageId ? handleSaveEdit : handleSend}
-            disabled={!inputText.trim()}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.sendButtonText}>
-              {editingMessageId ? '✓' : '➤'}
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -326,16 +487,59 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.xxl,
-    paddingBottom: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
     backgroundColor: theme.colors.backgroundSecondary,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderDark,
+    borderBottomColor: theme.colors.borderLight,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    gap: theme.spacing.md,
+  },
+  headerCenter: {
+    flex: 1,
+  },
+  appName: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.primary,
+    letterSpacing: 0.3,
+    marginBottom: 1,
+  },
+  roomTitle: {
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 3,
+    backgroundColor: theme.colors.backgroundTertiary,
+    borderRadius: theme.borderRadius.md,
+  },
+  statusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  statusDotActive: {
+    backgroundColor: theme.colors.online,
+  },
+  connectionText: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.textSecondary,
   },
   roomInfo: {
     flexDirection: 'row',
@@ -343,32 +547,44 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: theme.spacing.md,
   },
+  roomDetails: {
+    flex: 1,
+  },
   roomIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.sm,
   },
   roomIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
-  roomTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text,
-    marginBottom: 2,
+  typeBadge: {
+    marginTop: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  typeBadgeText: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textSecondary,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   onlineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: theme.colors.online,
     marginRight: theme.spacing.xs,
   },
@@ -385,23 +601,153 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  messageRow: {
+    flexDirection: 'row',
+    marginHorizontal: theme.spacing.xs,
+  },
+  messageRowMine: {
+    justifyContent: 'flex-end',
+  },
+  messageRowOther: {
+    justifyContent: 'flex-start',
+  },
+  bubble: {
+    maxWidth: '78%',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  bubbleMine: {
+    backgroundColor: theme.colors.primary,
+    borderBottomRightRadius: theme.borderRadius.xs,
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.15,
+  },
+  bubbleOther: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderBottomLeftRadius: theme.borderRadius.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  senderLabel: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
+  },
+  messageText: {
+    fontSize: theme.typography.fontSize.base,
+    lineHeight: theme.typography.fontSize.base * theme.typography.lineHeight.normal,
+    marginBottom: 2,
+  },
+  messageTextMine: {
+    color: theme.colors.textOnPrimary,
+  },
+  messageTextOther: {
+    color: theme.colors.text,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: theme.spacing.xs,
+    marginTop: 2,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.xs,
+  },
+  badgePill: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+    backgroundColor: theme.colors.backgroundElevated,
+  },
+  badgeText: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
+  },
+  editedTag: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  timeText: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+  futureFeatureBanner: {
+    marginHorizontal: theme.spacing.md,
+    marginVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    opacity: 0.6,
+  },
+  futureFeatureIcon: {
+    fontSize: 18,
+    marginRight: theme.spacing.md,
+  },
+  futureFeatureContent: {
+    flex: 1,
+  },
+  futureFeatureTitle: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
+    marginBottom: theme.spacing.xs,
+  },
+  futureFeatureDesc: {
+    fontSize: theme.typography.fontSize.xs,
+  },
+  demoBanner: {
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderColor: theme.colors.borderLight,
+  },
+  demoBannerText: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
   
   // Input Container
   inputContainer: {
-    backgroundColor: theme.colors.backgroundSecondary,
+    backgroundColor: theme.colors.background,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.borderDark,
+    borderTopColor: theme.colors.borderLight,
   },
   editingBanner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
     backgroundColor: theme.colors.backgroundTertiary,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderDark,
+    borderBottomColor: theme.colors.borderLight,
   },
   editingInfo: {
     flexDirection: 'row',
@@ -429,65 +775,75 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontWeight: theme.typography.fontWeight.bold,
   },
+  // WhatsApp-style Composer
+  composerWrapper: {
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
+  },
+  inputHelperText: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.xs,
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
     gap: theme.spacing.sm,
   },
-  attachButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.backgroundTertiary,
+  composerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
   },
-  attachIcon: {
-    fontSize: 24,
-    color: theme.colors.textSecondary,
-    fontWeight: theme.typography.fontWeight.bold,
+  composerIconEmoji: {
+    fontSize: 18,
   },
-  inputWrapper: {
+  inputComposer: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundTertiary,
-    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.lg,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    minHeight: 40,
+    minHeight: 38,
     maxHeight: 100,
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
   },
   input: {
-    fontSize: 15,
+    fontSize: 14,
     color: theme.colors.text,
     fontWeight: '400',
-    lineHeight: 22,
+    lineHeight: 20,
     paddingVertical: 0,
   },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  sendButtonComposer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
     shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
     elevation: 3,
   },
-  sendButtonDisabled: {
-    backgroundColor: theme.colors.backgroundTertiary,
+  sendButtonComposerDisabled: {
+    backgroundColor: theme.colors.backgroundSecondary,
     shadowOpacity: 0,
     elevation: 0,
   },
-  sendButtonText: {
-    fontSize: 18,
+  sendButtonComposerText: {
+    fontSize: 16,
     color: theme.colors.textOnPrimary,
     fontWeight: theme.typography.fontWeight.bold,
   },

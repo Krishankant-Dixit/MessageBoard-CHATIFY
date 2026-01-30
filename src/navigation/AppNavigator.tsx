@@ -10,7 +10,8 @@ import {
   LoginScreen, 
   ChatRoomScreen, 
   ProfileScreen,
-  SettingsScreen 
+  SettingsScreen,
+  AboutScreen,
 } from '../screens';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -28,6 +29,7 @@ export type RootStackParamList = {
   Login: undefined;
   MainTabs: undefined;
   ChatRoom: { roomId: string; roomName: string };
+  About: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -159,6 +161,7 @@ export const AppNavigator: React.FC = () => {
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
+            <Stack.Screen name="About" component={AboutScreen} />
           </>
         )}
       </Stack.Navigator>

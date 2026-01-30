@@ -1,15 +1,15 @@
 // Modern typography system - Clean, minimalist design
 // Inspired by modern chat apps with soft, readable hierarchy
 const fontSize = {
-  xs: 11,      // Captions
-  sm: 13,      // Small text, secondary info
-  base: 15,    // Body text, standard reading
-  md: 16,      // Alternative body
-  lg: 18,      // Larger body, emphasized
-  xl: 22,      // Subheadings
-  xxl: 28,     // Headings
-  xxxl: 34,    // Large headings
-  display: 42, // Display/hero text
+  xs: 12,
+  sm: 14,
+  base: 15,
+  md: 16,
+  lg: 18,
+  xl: 20,
+  xxl: 24,
+  xxxl: 28,
+  display: 34,
 };
 
 // Modern system font family stack
@@ -52,11 +52,11 @@ export const typography = {
   
   // Line heights - Optimized for readability with soft feel
   lineHeight: {
-    tight: 1.2,      // Headings
-    snug: 1.375,     // Subheadings
-    normal: 1.5,     // Body text (default)
-    relaxed: 1.625,  // Long-form content
-    loose: 1.75,     // Accessibility mode
+    tight: 1.2,
+    snug: 1.35,
+    normal: 1.5,
+    relaxed: 1.6,
+    loose: 1.7,
   },
   
   // Letter spacing - Subtle adjustments for modern look
@@ -71,24 +71,24 @@ export const typography = {
   // Text styles presets - Minimalist & clean
   presets: {
     displayLarge: {
-      fontSize: 42,
+      fontSize: 34,
       fontWeight: '800' as const,
       lineHeight: 1.2,
       letterSpacing: -0.5,
     },
     displayMedium: {
-      fontSize: 34,
+      fontSize: 28,
       fontWeight: '700' as const,
       lineHeight: 1.2,
       letterSpacing: -0.25,
     },
     headlineLarge: {
-      fontSize: 28,
+      fontSize: 24,
       fontWeight: '700' as const,
       lineHeight: 1.3,
     },
     headlineMedium: {
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: '600' as const,
       lineHeight: 1.3,
     },

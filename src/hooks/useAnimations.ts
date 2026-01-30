@@ -2,6 +2,24 @@ import { useRef, useEffect } from 'react';
 import { Animated } from 'react-native';
 
 /**
+ * Hook for fade-in animations
+ * Lightweight animation for message appearance
+ */
+export const useFadeInAnimation = (duration: number = 300) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: duration,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim, duration]);
+
+  return fadeAnim;
+};
+
+/**
  * Hook for scale animations
  * Useful for message send, loading indicators, etc.
  */

@@ -10,10 +10,10 @@ export const theme = {
   
   // Border radius
   borderRadius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
+    sm: 10,
+    md: 14,
+    lg: 18,
+    xl: 22,
     full: 9999,
   },
   
@@ -22,23 +22,23 @@ export const theme = {
     small: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
+      shadowOpacity: 0.12,
+      shadowRadius: 6,
       elevation: 2,
     },
     medium: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.30,
-      shadowRadius: 4.65,
-      elevation: 4,
+      shadowOpacity: 0.16,
+      shadowRadius: 10,
+      elevation: 3,
     },
     large: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.35,
-      shadowRadius: 6.27,
-      elevation: 8,
+      shadowOpacity: 0.2,
+      shadowRadius: 16,
+      elevation: 5,
     },
   },
 };
