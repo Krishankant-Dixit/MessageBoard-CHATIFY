@@ -1,0 +1,21 @@
+{
+  "background_color": "#0A0B0D",
+  "display": "standalone",
+  "lang": "en",
+  "name": "Company Message Board",
+  "short_name": "Company Message Board",
+  "start_url": "/?utm_source=web_app_manifest",
+  "orientation": "portrait",
+  "related_applications": [
+    {
+      "platform": "itunes",
+      "id": "com.company.messageboard"
+    },
+    {
+      "platform": "play",
+      "url": "http://play.google.com/store/apps/details?id=com.company.messageboard",
+      "id": "com.company.messageboard"
+    }
+  ],
+  "prefer_related_applications": true
+}
