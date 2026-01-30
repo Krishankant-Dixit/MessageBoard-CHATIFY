@@ -9,6 +9,7 @@ import {
   View,
   Animated,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAnimatedButton } from '../hooks';
 import { theme } from '../theme';
 
@@ -19,7 +20,7 @@ interface ButtonProps {
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
-  icon?: string;
+  icon?: string; // MaterialCommunityIcons name
   style?: ViewStyle;
   textStyle?: TextStyle;
   fullWidth?: boolean;
@@ -60,6 +61,15 @@ export const Button: React.FC<ButtonProps> = ({
     opacity: opacityAnim,
   };
 
+  const iconColor = (() => {
+    if (variant === 'outline') return theme.colors.primary;
+    if (variant === 'ghost') return theme.colors.textSecondary;
+    if (variant === 'secondary') return theme.colors.text;
+    return theme.colors.textOnPrimary;
+  })();
+
+  const iconSize = size === 'small' ? 16 : size === 'large' ? 20 : 18;
+
   return (
     <Animated.View style={animatedStyle}>
       <TouchableOpacity
@@ -77,7 +87,14 @@ export const Button: React.FC<ButtonProps> = ({
           />
         ) : (
           <View style={styles.content}>
-            {icon && <Text style={[styles.icon, textStyles]}>{icon}</Text>}
+            {icon && (
+              <MaterialCommunityIcons
+                name={icon}
+                size={iconSize}
+                color={iconColor}
+                style={styles.icon}
+              />
+            )}
             <Text style={textStyles}>{title}</Text>
           </View>
         )}

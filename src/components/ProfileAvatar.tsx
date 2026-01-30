@@ -8,6 +8,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme';
 
@@ -105,7 +106,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ onLogout, onSettin
                 Alert.alert('Profile', `User: ${user.name}\nAuth Method: ${user.authMethod}`);
               }}
             >
-              <Text style={styles.menuItemIcon}>👤</Text>
+              <MaterialCommunityIcons name="account" size={18} color={theme.colors.textSecondary} />
               <Text style={styles.menuItemText}>Profile</Text>
             </TouchableOpacity>
 
@@ -113,7 +114,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ onLogout, onSettin
               style={styles.menuItem}
               onPress={handleSettings}
             >
-              <Text style={styles.menuItemIcon}>⚙️</Text>
+              <MaterialCommunityIcons name="cog" size={18} color={theme.colors.textSecondary} />
               <Text style={styles.menuItemText}>Settings</Text>
             </TouchableOpacity>
 
@@ -123,7 +124,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ onLogout, onSettin
               style={[styles.menuItem, styles.menuItemDanger]}
               onPress={handleLogout}
             >
-              <Text style={styles.menuItemIcon}>🚪</Text>
+              <MaterialCommunityIcons name="logout" size={18} color={theme.colors.error} />
               <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Logout</Text>
             </TouchableOpacity>
           </View>

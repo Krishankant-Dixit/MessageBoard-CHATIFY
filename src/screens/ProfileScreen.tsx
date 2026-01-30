@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../context/ThemeContext';
@@ -81,7 +82,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
         <View style={[styles.centerContainer, { paddingTop: insets.top }]}>
-          <Text style={styles.emptyIcon}>👤</Text>
+          <MaterialCommunityIcons name="account-circle-outline" size={56} color={theme.colors.textSecondary} />
           <Text style={styles.emptyTitle}>Profile Unavailable</Text>
           <Text style={styles.emptyDescription}>Connect your wallet to view your profile</Text>
           <Button title="Go to Chats" onPress={() => navigation.goBack()} size="large" />
@@ -124,7 +125,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           {/* Demo Badge */}
           {DEMO_MODE && (
             <View style={styles.demoBadgeNew}>
-              <Text style={styles.demoBadgeIcon}>🎭</Text>
+              <MaterialCommunityIcons name="theater" size={16} color={theme.colors.textSecondary} />
               <Text style={styles.demoBadgeText}>Demo Identity</Text>
             </View>
           )}
@@ -140,13 +141,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <View style={styles.menuItemLeft}>
-                <Text style={styles.menuItemIcon}>📋</Text>
+                <MaterialCommunityIcons name="clipboard-text-outline" size={18} color={theme.colors.textSecondary} />
                 <View>
                   <Text style={styles.menuItemTitle}>Full Address</Text>
                   <Text style={styles.menuItemSubtitle}>{account}</Text>
                 </View>
               </View>
-              <Text style={styles.menuItemAction}>→</Text>
+              <MaterialCommunityIcons name="chevron-right" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -157,7 +158,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <View style={styles.sectionCard}>
             <View style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
-                <Text style={styles.menuItemIcon}>🌐</Text>
+                <MaterialCommunityIcons name="check-circle" size={18} color={theme.colors.online} />
                 <View>
                   <Text style={styles.menuItemTitle}>Status</Text>
                   <View style={styles.statusBadgeNew}>
@@ -172,7 +173,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
             <View style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
-                <Text style={styles.menuItemIcon}>⛓️</Text>
+                <MaterialCommunityIcons name="lan-connect" size={18} color={theme.colors.textSecondary} />
                 <View>
                   <Text style={styles.menuItemTitle}>Network</Text>
                   <Text style={styles.menuItemValue}>{network || 'Unknown'}</Text>
@@ -184,7 +185,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
             <View style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
-                <Text style={styles.menuItemIcon}>🔗</Text>
+                <MaterialCommunityIcons name="link-variant" size={18} color={theme.colors.textSecondary} />
                 <View>
                   <Text style={styles.menuItemTitle}>Chain ID</Text>
                   <Text style={styles.menuItemValue}>{chainId || '-'}</Text>
@@ -200,7 +201,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <View style={[styles.sectionCard, styles.disabledCard]}>
             <View style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
-                <Text style={styles.menuItemIcon}>🔗</Text>
+                <MaterialCommunityIcons name="link-variant" size={18} color={theme.colors.textSecondary} />
                 <View>
                   <Text style={[styles.menuItemTitle, styles.disabledText]}>ENS Username</Text>
                   <Text style={[styles.menuItemSubtitle, styles.disabledSubtext]}>Connect your ENS domain</Text>
@@ -217,7 +218,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <View style={[styles.sectionCard, styles.disabledCard]}>
             <View style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
-                <Text style={styles.menuItemIcon}>🔒</Text>
+                <MaterialCommunityIcons name="lock-outline" size={18} color={theme.colors.textSecondary} />
                 <View>
                   <Text style={[styles.menuItemTitle, styles.disabledText]}>Private Rooms</Text>
                   <Text style={[styles.menuItemSubtitle, styles.disabledSubtext]}>Encrypted rooms with users</Text>

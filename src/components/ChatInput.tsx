@@ -10,6 +10,7 @@ import {
   Animated,
   Text,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 
 interface ChatInputProps {
@@ -132,7 +133,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onPress={actionButton.onPress}
             disabled={disabled}
           >
-            <Text style={styles.actionButtonIcon}>{actionButton.icon}</Text>
+            <MaterialCommunityIcons
+              name={actionButton.icon}
+              size={20}
+              color={theme.colors.textSecondary}
+            />
           </TouchableOpacity>
         )}
 
@@ -172,7 +177,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             disabled={isSendDisabled}
             activeOpacity={0.7}
           >
-            <Text style={styles.sendIcon}>➤</Text>
+            <MaterialCommunityIcons
+              name="send"
+              size={18}
+              color={theme.colors.textOnPrimary}
+            />
           </TouchableOpacity>
         </Animated.View>
       </View>

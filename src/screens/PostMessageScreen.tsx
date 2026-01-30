@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
@@ -42,6 +43,7 @@ interface SafetyResult {
 export const PostMessageScreen: React.FC<PostMessageScreenProps> = ({
   navigation,
 }) => {
+  const insets = useSafeAreaInsets();
   const { account, chainId, postMessage } = useWeb3();
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -194,7 +196,7 @@ export const PostMessageScreen: React.FC<PostMessageScreenProps> = ({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, theme.spacing.lg) }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

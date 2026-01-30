@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   HomeScreen,
@@ -66,7 +67,11 @@ const MainTabs: React.FC = () => {
         options={{
           tabBarLabel: 'Chats',
           tabBarIcon: ({ color, size, focused }) => (
-            <Text style={{ fontSize: focused ? 26 : 24 }}>💬</Text>
+            <MaterialCommunityIcons
+              name="message-text"
+              size={focused ? 24 : 22}
+              color={color}
+            />
           ),
         }}
       />
@@ -76,7 +81,11 @@ const MainTabs: React.FC = () => {
         options={{
           tabBarLabel: 'New Message',
           tabBarIcon: ({ color, size, focused }) => (
-            <Text style={{ fontSize: focused ? 26 : 24 }}>✏️</Text>
+            <MaterialCommunityIcons
+              name="square-edit-outline"
+              size={focused ? 24 : 22}
+              color={color}
+            />
           ),
         }}
       />
@@ -86,7 +95,11 @@ const MainTabs: React.FC = () => {
         options={{
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size, focused }) => (
-            <Text style={{ fontSize: focused ? 26 : 24 }}>👤</Text>
+            <MaterialCommunityIcons
+              name="account"
+              size={focused ? 24 : 22}
+              color={color}
+            />
           ),
         }}
       />
@@ -96,7 +109,11 @@ const MainTabs: React.FC = () => {
         options={{
           tabBarLabel: 'Settings',
           tabBarIcon: ({ color, size, focused }) => (
-            <Text style={{ fontSize: focused ? 26 : 24 }}>⚙️</Text>
+            <MaterialCommunityIcons
+              name="cog"
+              size={focused ? 24 : 22}
+              color={color}
+            />
           ),
         }}
       />

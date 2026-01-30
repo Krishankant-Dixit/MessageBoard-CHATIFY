@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 import { useTheme } from '../context/ThemeContext';
@@ -82,7 +83,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         onPress={onSettingsPress}
         activeOpacity={0.7}
       >
-        <Text style={styles.settingsIcon}>⚙️</Text>
+        <MaterialCommunityIcons name="cog" size={20} color={colors.textSecondary} />
       </TouchableOpacity>
     );
   };

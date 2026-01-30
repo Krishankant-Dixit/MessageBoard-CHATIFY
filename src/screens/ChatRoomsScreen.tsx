@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -44,7 +45,7 @@ export const ChatRoomsScreen: React.FC<ChatRoomsScreenProps> = ({ navigation }) 
       members: ['user1', 'user2', 'user3'],
       createdBy: 'admin',
       createdAt: Date.now() / 1000 - 86400 * 30,
-      avatar: '💬',
+      avatar: 'message-text',
     },
     {
       id: 'room_2',
@@ -55,7 +56,7 @@ export const ChatRoomsScreen: React.FC<ChatRoomsScreenProps> = ({ navigation }) 
       members: ['user1', 'user4', 'user5'],
       createdBy: 'manager',
       createdAt: Date.now() / 1000 - 86400 * 15,
-      avatar: '👨‍💻',
+      avatar: 'account-group',
     },
     {
       id: 'room_3',
@@ -65,7 +66,7 @@ export const ChatRoomsScreen: React.FC<ChatRoomsScreenProps> = ({ navigation }) 
       members: ['user1', 'user2'],
       createdBy: 'user1',
       createdAt: Date.now() / 1000 - 86400 * 7,
-      avatar: '🔒',
+      avatar: 'lock-outline',
     },
     {
       id: 'room_4',
@@ -76,7 +77,7 @@ export const ChatRoomsScreen: React.FC<ChatRoomsScreenProps> = ({ navigation }) 
       members: ['user1', 'user6', 'user7'],
       createdBy: 'marketing_lead',
       createdAt: Date.now() / 1000 - 86400 * 20,
-      avatar: '📢',
+      avatar: 'bullhorn',
     },
   ];
 
@@ -107,13 +108,13 @@ export const ChatRoomsScreen: React.FC<ChatRoomsScreenProps> = ({ navigation }) 
   const getRoomTypeIcon = (type: ChatRoom['type']) => {
     switch (type) {
       case 'public':
-        return '🌐';
+        return 'earth';
       case 'private':
-        return '🔒';
+        return 'lock-outline';
       case 'company':
-        return '🏢';
+        return 'office-building';
       default:
-        return '💬';
+        return 'message-text';
     }
   };
 
@@ -124,7 +125,13 @@ export const ChatRoomsScreen: React.FC<ChatRoomsScreenProps> = ({ navigation }) 
       <Card style={styles.roomCard}>
         <View style={styles.roomHeader}>
           <View style={styles.roomInfo}>
-            <Text style={styles.roomAvatar}>{item.avatar || getRoomTypeIcon(item.type)}</Text>
+            <View style={styles.roomAvatar}>
+              <MaterialCommunityIcons
+                name={item.avatar || getRoomTypeIcon(item.type)}
+                size={22}
+                color={theme.colors.primary}
+              />
+            </View>
             <View style={styles.roomDetails}>
               <Text style={styles.roomName}>{item.name}</Text>
               <Text style={styles.roomDescription}>{item.description}</Text>
@@ -277,8 +284,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   roomAvatar: {
-    fontSize: 36,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
   },
   roomDetails: {
     flex: 1,

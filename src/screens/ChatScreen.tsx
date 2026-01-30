@@ -8,6 +8,7 @@ import {
   StatusBar,
   TouchableOpacity,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -217,7 +218,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation, route }) => 
           
           <View style={styles.roomInfo}>
             <View style={styles.roomAvatar}>
-              <Text style={styles.roomIcon}>💬</Text>
+              <MaterialCommunityIcons name="message-text" size={18} color={theme.colors.textOnPrimary} />
             </View>
             <View style={styles.roomDetails}>
               <Text style={styles.roomTitle} numberOfLines={1}>
@@ -251,11 +252,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation, route }) => 
       {editingMessageId && (
         <View style={styles.editingBanner}>
           <View style={styles.editingInfo}>
-            <Text style={styles.editingIcon}>✏️</Text>
+            <MaterialCommunityIcons name="pencil" size={16} color={theme.colors.primary} />
             <Text style={styles.editingText}>Editing message</Text>
           </View>
           <TouchableOpacity onPress={cancelEdit} style={styles.cancelButton}>
-            <Text style={styles.cancelIcon}>✕</Text>
+            <MaterialCommunityIcons name="close" size={16} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
       )}

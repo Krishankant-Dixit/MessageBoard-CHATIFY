@@ -10,10 +10,12 @@ import {
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { Card } from '../components';
 import { DEMO_MODE } from '../utils/constants';
 
@@ -26,9 +28,12 @@ interface SettingsScreenProps {
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { colors, spacing, isDarkMode, toggleTheme } = useTheme();
+  const { logout } = useAuth();
   const [isClearingCache, setIsClearingCache] = useState(false);
   const [demoModeEnabled, setDemoModeEnabled] = useState(DEMO_MODE);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
   const handleThemeToggle = async () => {
     await toggleTheme();
@@ -83,8 +88,29 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     );
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to log out');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderSettingItem = (
-    icon: string,
+    icon: IconName,
     title: string,
     description: string,
     onPress: () => void,
@@ -96,7 +122,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       activeOpacity={0.7}
     >
       <View style={styles.settingLeft}>
-        <Text style={styles.settingIcon}>{icon}</Text>
+        <View style={styles.settingIconWrap}>
+          <MaterialCommunityIcons name={icon} size={20} color={colors.textSecondary} />
+        </View>
         <View style={styles.settingContent}>
           <Text style={[styles.settingTitle, { color: colors.text }]}>
             {title}
@@ -107,7 +135,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         </View>
       </View>
       {rightComponent || (
-        <Text style={[styles.chevron, { color: colors.textSecondary }]}>›</Text>
+        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textSecondary} />
       )}
     </TouchableOpacity>
   );
@@ -129,7 +157,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Appearance</Text>
           <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
             {renderSettingItem(
-              '🌙',
+              'weather-night',
               'Dark Mode',
               isDarkMode ? 'Using dark theme' : 'Using light theme',
               handleThemeToggle,
@@ -148,7 +176,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Preferences</Text>
           <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
             {renderSettingItem(
-              '🔔',
+              'bell-outline',
               'Notifications',
               notificationsEnabled ? 'Enabled' : 'Disabled',
               handleNotificationsToggle,
@@ -161,7 +189,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             )}
             <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
             {renderSettingItem(
-              '🎭',
+              'theater',
               'Demo Mode',
               demoModeEnabled ? 'Enabled' : 'Disabled',
               handleDemoModeToggle,
@@ -180,7 +208,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Data</Text>
           <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
             {renderSettingItem(
-              '🗑️',
+              'trash-can-outline',
               'Clear Cache',
               'Remove locally stored data',
               handleClearCache,
@@ -196,27 +224,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>DAO Moderation</Text>
           <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
             {renderSettingItem(
-              '🤝',
+              'account-group-outline',
               'Community Moderation',
               'Vote on decisions',
               () => {},
-              <Text style={[styles.lockIcon, { color: colors.textSecondary }]}>🔒</Text>
+              <MaterialCommunityIcons name="lock-outline" size={16} color={colors.textSecondary} />
             )}
             <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
             {renderSettingItem(
-              '🏛️',
+              'bank-outline',
               'DAO Treasury',
               'Manage treasury',
               () => {},
-              <Text style={[styles.lockIcon, { color: colors.textSecondary }]}>🔒</Text>
+              <MaterialCommunityIcons name="lock-outline" size={16} color={colors.textSecondary} />
             )}
             <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
             {renderSettingItem(
-              '📊',
+              'chart-box-outline',
               'Governance',
               'Create proposals',
               () => {},
-              <Text style={[styles.lockIcon, { color: colors.textSecondary }]}>🔒</Text>
+              <MaterialCommunityIcons name="lock-outline" size={16} color={colors.textSecondary} />
             )}
           </View>
         </View>
@@ -226,38 +254,51 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>About</Text>
           <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
             {renderSettingItem(
-              '📚',
+              'book-open-page-variant-outline',
               'About Chatify',
               'Features & roadmap',
               () => navigation.navigate('About' as any)
             )}
             <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
             {renderSettingItem(
-              '📦',
+              'package-variant-closed',
               'Version',
               '1.0.0',
               () => Alert.alert('Version Info', 'Chatify v1.0.0\nBlockchain-Powered Secure Messaging')
             )}
             <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
             {renderSettingItem(
-              '⛓️',
+              'lan-connect',
               'Tech Stack',
               'React Native • Web3',
               () => Alert.alert('Tech Stack', 'React Native\nExpo\nEtherverse & Smart Contracts\nAI Sentiment Analysis')
             )}
             <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
             {renderSettingItem(
-              '🔗',
+              'link-variant',
               'Documentation',
               'View docs',
               () => Alert.alert('Documentation', 'See README.md for complete documentation and setup instructions')
             )}
             <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
             {renderSettingItem(
-              '💡',
+              'lightbulb-outline',
               'Features',
               'Blockchain • AI • Web3',
               () => Alert.alert('Key Features', '✓ Blockchain messaging\n✓ AI sentiment analysis\n✓ Wallet authentication\n✓ Real-time updates\n✓ Modern UI/UX')
+            )}
+          </View>
+        </View>
+
+        {/* Account */}
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Account</Text>
+          <View style={[styles.settingsCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+            {renderSettingItem(
+              'logout',
+              'Logout',
+              'Sign out of your account',
+              handleLogout
             )}
           </View>
         </View>
@@ -320,6 +361,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     paddingHorizontal: 14,
+    gap: 12,
+  },
+  settingIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   settingLeft: {
     flexDirection: 'row',

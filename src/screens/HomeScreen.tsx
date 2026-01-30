@@ -15,6 +15,7 @@ import {
   Dimensions,
   ScaledSize,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -50,7 +51,7 @@ interface ChatItem {
   id: string;
   name: string;
   type: ChatType;
-  avatar: string;
+  avatar: string; // MaterialCommunityIcons name
   lastMessage: string;
   timestamp: number;
   unreadCount: number;
@@ -61,7 +62,7 @@ const pinnedChats: ChatItem[] = [
     id: 'pinned_chatify_team',
     name: 'CHATIFY Team',
     type: 'company',
-    avatar: '🏢',
+    avatar: 'office-building',
     lastMessage: 'Launch checklist ready for review.',
     timestamp: Math.floor(Date.now() / 1000) - 300,
     unreadCount: 2,
@@ -70,7 +71,7 @@ const pinnedChats: ChatItem[] = [
     id: 'pinned_web3_builders',
     name: 'Web3 Builders',
     type: 'group',
-    avatar: '🧱',
+    avatar: 'account-group',
     lastMessage: 'Contract demo is live on Sepolia.',
     timestamp: Math.floor(Date.now() / 1000) - 1800,
     unreadCount: 4,
@@ -82,7 +83,7 @@ const recentChats: ChatItem[] = [
     id: 'chat_acme_corp',
     name: 'Acme Corp',
     type: 'company',
-    avatar: '🏭',
+    avatar: 'factory',
     lastMessage: 'Please share the Q1 onboarding deck.',
     timestamp: Math.floor(Date.now() / 1000) - 3600,
     unreadCount: 0,
@@ -91,7 +92,7 @@ const recentChats: ChatItem[] = [
     id: 'chat_design_sync',
     name: 'Design Sync',
     type: 'group',
-    avatar: '🎨',
+    avatar: 'palette',
     lastMessage: 'Updated the spacing system and typography.',
     timestamp: Math.floor(Date.now() / 1000) - 7200,
     unreadCount: 1,
@@ -100,7 +101,7 @@ const recentChats: ChatItem[] = [
     id: 'chat_personal_alex',
     name: 'Alex Chen',
     type: 'personal',
-    avatar: '👤',
+    avatar: 'account',
     lastMessage: 'Let’s align on the demo flow tomorrow.',
     timestamp: Math.floor(Date.now() / 1000) - 8600,
     unreadCount: 0,
@@ -109,7 +110,7 @@ const recentChats: ChatItem[] = [
     id: 'chat_hr_updates',
     name: 'HR Updates',
     type: 'company',
-    avatar: '📌',
+    avatar: 'bullhorn-outline',
     lastMessage: 'Reminder: benefits enrollment closes Friday.',
     timestamp: Math.floor(Date.now() / 1000) - 10800,
     unreadCount: 3,
@@ -118,7 +119,7 @@ const recentChats: ChatItem[] = [
     id: 'chat_personal_maya',
     name: 'Maya Patel',
     type: 'personal',
-    avatar: '👩‍💻',
+    avatar: 'account-circle',
     lastMessage: 'Pushed the latest UI polish changes.',
     timestamp: Math.floor(Date.now() / 1000) - 14400,
     unreadCount: 0,
@@ -127,7 +128,7 @@ const recentChats: ChatItem[] = [
     id: 'chat_product_guild',
     name: 'Product Guild',
     type: 'group',
-    avatar: '📣',
+    avatar: 'account-group-outline',
     lastMessage: 'Roadmap items are finalized for review.',
     timestamp: Math.floor(Date.now() / 1000) - 20000,
     unreadCount: 6,
@@ -585,7 +586,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <Animated.View style={[styles.chatItem, { opacity: messageOpacity }]}
         >
           <View style={styles.chatAvatar}>
-            <Text style={styles.chatAvatarText}>{item.avatar}</Text>
+            <MaterialCommunityIcons
+              name={item.avatar as any}
+              size={24}
+              color={theme.colors.primary}
+            />
           </View>
           <View style={styles.chatInfo}>
             <View style={styles.chatRow}>
@@ -633,7 +638,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <View style={styles.headerIcon}>
-              <Text style={styles.headerIconText}>💬</Text>
+              <MaterialCommunityIcons name="message-text" size={22} color={theme.colors.textOnPrimary} />
             </View>
             <View>
               <Text style={styles.headerTitle}>Messages</Text>
@@ -659,7 +664,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress={handlePostMessage}
             activeOpacity={0.8}
           >
-            <Text style={styles.composeIcon}>✏️</Text>
+            <MaterialCommunityIcons name="square-edit-outline" size={20} color={theme.colors.textOnPrimary} />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -675,7 +680,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress={handleConnect}
             size="small"
             variant="primary"
-            icon="🔗"
+            icon="link-variant"
           />
         </View>
       )}

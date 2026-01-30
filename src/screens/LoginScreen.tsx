@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -76,15 +77,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             <View style={styles.featureContainer}>
               <View style={styles.feature}>
-                <Text style={styles.featureIcon}>🔒</Text>
+                <MaterialCommunityIcons name="lock-outline" size={22} color={theme.colors.primary} />
                 <Text style={styles.featureText}>Encrypted</Text>
               </View>
               <View style={styles.feature}>
-                <Text style={styles.featureIcon}>🏢</Text>
+                <MaterialCommunityIcons name="office-building" size={22} color={theme.colors.primary} />
                 <Text style={styles.featureText}>Company-Wide</Text>
               </View>
               <View style={styles.feature}>
-                <Text style={styles.featureIcon}>⛓️</Text>
+                <MaterialCommunityIcons name="lan-connect" size={22} color={theme.colors.primary} />
                 <Text style={styles.featureText}>Blockchain</Text>
               </View>
             </View>
@@ -198,7 +199,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         </Text>
 
         <Card style={styles.walletCard}>
-          <Text style={styles.walletIcon}>👛</Text>
+          <MaterialCommunityIcons name="wallet-outline" size={64} color={theme.colors.primary} />
           <Text style={styles.walletText}>
             Click the button below to connect your Web3 wallet
           </Text>

@@ -12,6 +12,7 @@ import {
   StatusBar,
   Animated,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -361,7 +362,11 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
           <BackButton onPress={() => navigation.goBack()} />
           <View style={styles.roomInfo}>
             <View style={styles.roomIconContainer}>
-              <Text style={styles.roomIcon}>{chatAvatar || '💬'}</Text>
+              <MaterialCommunityIcons
+                name={chatAvatar || 'message-text'}
+                size={18}
+                color={theme.colors.textOnPrimary}
+              />
             </View>
             <View style={styles.roomDetails}>
               <Text style={styles.roomTitle} numberOfLines={1}>{roomName}</Text>
@@ -400,7 +405,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <View style={[styles.futureFeatureBanner, { backgroundColor: theme.colors.backgroundSecondary }]}>
-              <Text style={styles.futureFeatureIcon}>📝</Text>
+              <MaterialCommunityIcons name="note-text-outline" size={18} color={theme.colors.textSecondary} />
               <View style={styles.futureFeatureContent}>
                 <Text style={[styles.futureFeatureTitle, { color: theme.colors.text }]}>Edit History (Coming Soon)</Text>
                 <Text style={[styles.futureFeatureDesc, { color: theme.colors.textSecondary }]}>View full edit audit trail for all messages</Text>
@@ -415,7 +420,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
         {editingMessageId && (
           <View style={styles.editingBanner}>
             <View style={styles.editingInfo}>
-              <Text style={styles.editingIcon}>✏️</Text>
+              <MaterialCommunityIcons name="pencil" size={16} color={theme.colors.primary} />
               <Text style={styles.editingText}>Editing message</Text>
             </View>
             <TouchableOpacity 
@@ -425,7 +430,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
               }}
               style={styles.cancelButton}
             >
-              <Text style={styles.cancelText}>✕</Text>
+              <MaterialCommunityIcons name="close" size={16} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
         )}
@@ -439,7 +444,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
               style={styles.composerIconButton}
               activeOpacity={0.7}
             >
-              <Text style={styles.composerIconEmoji}>😊</Text>
+              <MaterialCommunityIcons name="emoticon-outline" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
             
             <View style={styles.inputComposer}>
@@ -464,9 +469,11 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
               disabled={!inputText.trim() || !isConnected}
               activeOpacity={0.8}
             >
-              <Text style={styles.sendButtonComposerText}>
-                {editingMessageId ? '✓' : '➤'}
-              </Text>
+              <MaterialCommunityIcons
+                name={editingMessageId ? 'check' : 'send'}
+                size={16}
+                color={theme.colors.textOnPrimary}
+              />
             </TouchableOpacity>
           </View>
         </View>

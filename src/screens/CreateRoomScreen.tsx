@@ -9,6 +9,7 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Button, Input, Card } from '../components';
@@ -114,7 +115,7 @@ export const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }
               style={[styles.typeButton, roomType === 'public' && styles.typeButtonActive]}
               onPress={() => setRoomType('public')}
             >
-              <Text style={styles.typeIcon}>🌐</Text>
+              <MaterialCommunityIcons name="earth" size={20} color={theme.colors.textSecondary} />
               <Text style={[styles.typeTitle, roomType === 'public' && styles.typeTextActive]}>
                 Public
               </Text>
@@ -125,7 +126,7 @@ export const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }
               style={[styles.typeButton, roomType === 'private' && styles.typeButtonActive]}
               onPress={() => setRoomType('private')}
             >
-              <Text style={styles.typeIcon}>🔒</Text>
+              <MaterialCommunityIcons name="lock-outline" size={20} color={theme.colors.textSecondary} />
               <Text style={[styles.typeTitle, roomType === 'private' && styles.typeTextActive]}>
                 Private
               </Text>
@@ -136,7 +137,7 @@ export const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }
               style={[styles.typeButton, roomType === 'company' && styles.typeButtonActive]}
               onPress={() => setRoomType('company')}
             >
-              <Text style={styles.typeIcon}>🏢</Text>
+              <MaterialCommunityIcons name="office-building" size={20} color={theme.colors.textSecondary} />
               <Text style={[styles.typeTitle, roomType === 'company' && styles.typeTextActive]}>
                 Company
               </Text>
@@ -146,7 +147,10 @@ export const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }
         </Card>
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>📝 Room Information</Text>
+          <View style={styles.infoTitleRow}>
+            <MaterialCommunityIcons name="note-text-outline" size={18} color={theme.colors.textSecondary} />
+            <Text style={styles.infoTitle}>Room Information</Text>
+          </View>
           <Text style={styles.infoText}>
             • All messages are stored on blockchain{'\n'}
             • Messages are immutable and tamper-proof{'\n'}
@@ -209,11 +213,16 @@ const styles = StyleSheet.create({
   inputContainer: {
     marginBottom: theme.spacing.md,
   },
+  infoTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
   sectionLabel: {
     fontSize: theme.typography.fontSize.md,
     fontWeight: theme.typography.fontWeight.semibold,
     color: theme.colors.text,
-    marginBottom: theme.spacing.md,
   },
   typeContainer: {
     flexDirection: 'row',
