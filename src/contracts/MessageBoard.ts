@@ -119,13 +119,15 @@ export interface Message {
   isEdited: boolean;
   editCount: number;
   sentiment?: 'positive' | 'neutral' | 'negative';
-  sentimentIcon?: string;
+  sentimentScore?: number;
+  isSafe?: boolean;
+  safetyCategory?: 'safe' | 'spam' | 'abuse' | 'sensitive';
+  safetyReason?: string;
   roomId?: string;
   isPrivate?: boolean;
   editHistory?: MessageEdit[];
+  reactions?: Record<string, string[]>; // reaction -> list of userIds (optional, maintained off-chain)
 }
-
-// ... (keep existing content)
 
 // Add reaction types (off-chain)
 export interface ReactionSummary {
@@ -133,20 +135,4 @@ export interface ReactionSummary {
   count: number;
   reactedByMe?: boolean;
   users?: string[]; // user IDs or addresses
-}
-
-// Extend Message with optional reactions (off-chain only)
-export interface Message {
-  id: number;
-  sender: string;
-  content: string;
-  timestamp: number;
-  isEdited: boolean;
-  editCount: number;
-  sentiment?: 'positive' | 'neutral' | 'negative';
-  sentimentIcon?: string;
-  roomId?: string;
-  isPrivate?: boolean;
-  editHistory?: MessageEdit[];
-  reactions?: Record<string, string[]>; // reaction -> list of userIds (optional, maintained off-chain)
 }

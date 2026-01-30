@@ -7,7 +7,9 @@ import {
   ViewStyle,
   TextStyle,
   View,
+  Animated,
 } from 'react-native';
+import { useAnimatedButton } from '../hooks';
 import { theme } from '../theme';
 
 interface ButtonProps {
@@ -35,6 +37,8 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle,
   fullWidth = false,
 }) => {
+  const { scaleAnim, opacityAnim, handlePressIn, handlePressOut, handlePress } = useAnimatedButton(onPress);
+
   const buttonStyle = [
     styles.button,
     styles[variant],
@@ -51,25 +55,34 @@ export const Button: React.FC<ButtonProps> = ({
     textStyle,
   ];
 
+  const animatedStyle = {
+    transform: [{ scale: scaleAnim }],
+    opacity: opacityAnim,
+  };
+
   return (
-    <TouchableOpacity
-      style={buttonStyle}
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.8}
-    >
-      {loading ? (
-        <ActivityIndicator 
-          color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.textOnPrimary} 
-          size="small"
-        />
-      ) : (
-        <View style={styles.content}>
-          {icon && <Text style={[styles.icon, textStyles]}>{icon}</Text>}
-          <Text style={textStyles}>{title}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity
+        style={buttonStyle}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        activeOpacity={1}
+      >
+        {loading ? (
+          <ActivityIndicator 
+            color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.textOnPrimary} 
+            size="small"
+          />
+        ) : (
+          <View style={styles.content}>
+            {icon && <Text style={[styles.icon, textStyles]}>{icon}</Text>}
+            <Text style={textStyles}>{title}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 

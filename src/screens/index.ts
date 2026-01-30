@@ -7,3 +7,4 @@ export { ChatScreen } from './ChatScreen';
 export { CreateRoomScreen } from './CreateRoomScreen';
 export { ProfileScreen } from './ProfileScreen';
 export { SettingsScreen } from './SettingsScreen';
+export { DemoWalletInfoScreen } from './DemoWalletInfoScreen';

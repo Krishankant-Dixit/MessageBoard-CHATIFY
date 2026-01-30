@@ -25,7 +25,7 @@ import {
 } from '../services/geminiService';
 
 type PostMessageScreenNavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<any, 'Post'>,
+  BottomTabNavigationProp<any, 'NewMessage'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 

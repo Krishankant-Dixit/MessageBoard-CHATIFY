@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { lightTheme, darkTheme, type Theme as MaterialTheme } from '../theme/theme';
+import { lightTheme, darkTheme, type ThemeColors } from '../theme/theme';
 import { theme } from '../theme';
 
 /**
  * Theme Context for managing light/dark theme
  * Persists theme preference using AsyncStorage
+ * Provides consistent colors and design system across the app
  */
 
 interface ThemeContextType {
-  theme: MaterialTheme;
+  colors: ThemeColors;
   isDarkMode: boolean;
   toggleTheme: () => Promise<void>;
   setTheme: (themeName: 'light' | 'dark') => Promise<void>;
@@ -44,8 +45,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children, 
   initialTheme = 'dark' 
 }) => {
-  const [theme, setThemeState] = useState<MaterialTheme>(
-    initialTheme === 'light' ? lightTheme : darkTheme
+  const [colors, setColors] = useState<ThemeColors>(
+    initialTheme === 'light' ? lightTheme.colors : darkTheme.colors
   );
   const [isDarkMode, setIsDarkMode] = useState(initialTheme === 'dark');
   const [isLoading, setIsLoading] = useState(true);
@@ -62,14 +63,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
       if (savedTheme) {
         const themeName = savedTheme as 'light' | 'dark';
-        setThemeState(themeName === 'light' ? lightTheme : darkTheme);
+        setColors(themeName === 'light' ? lightTheme.colors : darkTheme.colors);
         setIsDarkMode(themeName === 'dark');
         console.log(`✓ Theme loaded: ${themeName}`);
       }
     } catch (error) {
       console.error('Error loading theme preference:', error);
       // Use default dark theme on error
-      setThemeState(darkTheme);
+      setColors(darkTheme.colors);
       setIsDarkMode(true);
     } finally {
       setIsLoading(false);
@@ -82,9 +83,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   const toggleTheme = async () => {
     try {
       const newThemeName: 'light' | 'dark' = isDarkMode ? 'light' : 'dark';
-      const newTheme = newThemeName === 'light' ? lightTheme : darkTheme;
+      const newColors = newThemeName === 'light' ? lightTheme.colors : darkTheme.colors;
       
-      setThemeState(newTheme);
+      setColors(newColors);
       setIsDarkMode(newThemeName === 'dark');
       
       // Persist preference
@@ -100,9 +101,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
    */
   const setTheme = async (themeName: 'light' | 'dark') => {
     try {
-      const newTheme = themeName === 'light' ? lightTheme : darkTheme;
+      const newColors = themeName === 'light' ? lightTheme.colors : darkTheme.colors;
       
-      setThemeState(newTheme);
+      setColors(newColors);
       setIsDarkMode(themeName === 'dark');
       
       // Persist preference
@@ -114,7 +115,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   };
 
   const value: ThemeContextType = {
-    theme,
+    colors,
     isDarkMode,
     toggleTheme,
     setTheme,

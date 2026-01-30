@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,16 @@ import {
   TouchableOpacity,
   Alert,
   Clipboard,
+  ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { theme } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { useWeb3 } from '../context/Web3Context';
+import { useWeb3, formatAddress } from '../context/Web3Context';
 import { Card, Button } from '../components';
+import { DEMO_MODE } from '../utils/constants';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<any, 'Profile'>;
 
@@ -24,9 +26,10 @@ interface ProfileScreenProps {
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
-  const { account, isConnected, disconnectWallet } = useWeb3();
-  const { theme: materialTheme } = useTheme();
+  const { user } = useAuth();
+  const { account, isConnected, network, chainId, disconnectWallet } = useWeb3();
+  const { colors, isDarkMode } = useTheme();
+  const [connecting, setConnecting] = useState(false);
 
   const handleCopyAddress = () => {
     if (account) {
@@ -35,23 +38,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleLogout = () => {
+  const handleDisconnect = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      'Disconnect Wallet?',
+      'Are you sure you want to disconnect?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Logout',
-          onPress: async () => {
-            try {
-              if (isConnected) {
-                disconnectWallet();
-              }
-              await logout();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to logout');
-            }
+          text: 'Disconnect',
+          onPress: () => {
+            disconnectWallet();
+            Alert.alert('Disconnected', 'Wallet disconnected successfully.');
           },
           style: 'destructive',
         },
@@ -59,156 +56,125 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     );
   };
 
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const getAvatarColor = (address: string): string => {
+    const colorPalette = [
+      '#FF6B6B',
+      '#4ECDC4',
+      '#45B7D1',
+      '#FFA07A',
+      '#98D8C8',
+      '#F7DC6F',
+      '#BB8FCE',
+      '#85C1E2',
+    ];
+    const index = parseInt(address.slice(2, 4), 16) % colorPalette.length;
+    return colorPalette[index];
   };
 
-  if (!user) {
+  const getAvatarInitials = (address: string): string => {
+    return address.slice(2, 4).toUpperCase();
+  };
+
+  if (!isConnected || !account) {
     return (
-      <View style={[styles.container, { backgroundColor: materialTheme.colors.background }]}>
-        <Text style={[styles.errorText, { color: materialTheme.colors.textSecondary }]}>
-          No user data available
-        </Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+        <View style={[styles.centerContainer, { paddingTop: insets.top }]}>
+          <Text style={styles.emptyIcon}>👤</Text>
+          <Text style={styles.emptyTitle}>Profile Unavailable</Text>
+          <Text style={styles.emptyDescription}>Connect your wallet to view your profile</Text>
+          <Button title="Go to Chats" onPress={() => navigation.goBack()} size="large" />
+        </View>
       </View>
     );
   }
 
-  const initials = getInitials(user.name);
+  const avatarColor = getAvatarColor(account);
+  const initials = getAvatarInitials(account);
+  const displayName = `Chatify User ${initials}`;
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: materialTheme.colors.background }]}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + theme.spacing.lg }]}
-    >
-      {/* Profile Header */}
-      <View style={styles.header}>
-        <View style={[styles.avatarLarge, { backgroundColor: materialTheme.colors.primary }]}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-        <Text style={[styles.userName, { color: materialTheme.colors.textPrimary }]}>
-          {user.name}
-        </Text>
-        <Text style={[styles.userEmail, { color: materialTheme.colors.textSecondary }]}>
-          {user.email || user.walletAddress}
-        </Text>
-        <View style={[styles.badge, { backgroundColor: `${materialTheme.colors.primary}20` }]}>
-          <Text style={[styles.badgeText, { color: materialTheme.colors.primary }]}>
-            {user.authMethod === 'email' ? '📧 Email' : '🔗 Wallet'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Account Info */}
-      <Card style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: materialTheme.colors.textPrimary }]}>
-          Account Information
-        </Text>
-        
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: materialTheme.colors.textSecondary }]}>
-            User ID
-          </Text>
-          <Text style={[styles.infoValue, { color: materialTheme.colors.textPrimary }]}>
-            {user.id.slice(0, 8)}...
-          </Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: materialTheme.colors.textSecondary }]}>
-            Auth Method
-          </Text>
-          <Text style={[styles.infoValue, { color: materialTheme.colors.textPrimary }]}>
-            {user.authMethod}
-          </Text>
-        </View>
-
-        {user.companyId && (
-          <>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: materialTheme.colors.textSecondary }]}>
-                Company ID
-              </Text>
-              <Text style={[styles.infoValue, { color: materialTheme.colors.textPrimary }]}>
-                {user.companyId}
-              </Text>
-            </View>
-          </>
-        )}
-      </Card>
-
-      {/* Wallet Info */}
-      {isConnected && account && (
-        <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: materialTheme.colors.textPrimary }]}>
-            Wallet Connection
-          </Text>
-          
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: materialTheme.colors.textSecondary }]}>
-              Status
-            </Text>
-            <View style={styles.statusBadge}>
-              <View style={styles.statusDot} />
-              <Text style={[styles.statusText, { color: materialTheme.colors.success }]}>
-                Connected
-              </Text>
-            </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 48 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Header */}
+        <View style={styles.header}>
+          {/* Large Avatar */}
+          <View style={[styles.avatarLarge, { backgroundColor: avatarColor }]}>
+            <Text style={styles.avatarInitials}>{initials}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: materialTheme.colors.textSecondary }]}>
-              Address
-            </Text>
-            <TouchableOpacity onPress={handleCopyAddress} style={styles.addressContainer}>
-              <Text style={[styles.infoValue, { color: materialTheme.colors.textPrimary }]} numberOfLines={1}>
-                {account.slice(0, 10)}...{account.slice(-8)}
-              </Text>
-              <Text style={styles.copyIcon}>📋</Text>
+          {/* Username */}
+          <Text style={styles.userName}>{displayName}</Text>
+
+          {/* Demo Badge */}
+          {DEMO_MODE && (
+            <View style={[styles.demoBadge, { backgroundColor: colors.warning + '20' }]}>
+              <Text style={[styles.demoBadgeText, { color: colors.warning }]}>🎭 Demo Identity</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Wallet Section */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Wallet Address</Text>
+          
+          <View style={styles.addressBox}>
+            <Text style={styles.addressText}>{account}</Text>
+            <TouchableOpacity onPress={handleCopyAddress} style={styles.copyBtn}>
+              <Text style={styles.copyBtnIcon}>📋</Text>
             </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity onPress={handleCopyAddress} style={styles.copyFullBtn}>
+            <Text style={styles.copyFullBtnIcon}>📋</Text>
+            <Text style={styles.copyFullBtnText}>Copy Address</Text>
+          </TouchableOpacity>
+        </Card>
+
+        {/* Network Status */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Network Status</Text>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Status</Text>
+            <View style={styles.statusBadge}>
+              <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
+              <Text style={[styles.statusText, { color: colors.success }]}>Connected</Text>
+            </View>
           </View>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity
-            style={[styles.copyButton, { backgroundColor: `${materialTheme.colors.primary}10` }]}
-            onPress={handleCopyAddress}
-          >
-            <Text style={styles.copyIcon}>📋</Text>
-            <Text style={[styles.copyButtonText, { color: materialTheme.colors.primary }]}>
-              Copy Full Address
-            </Text>
-          </TouchableOpacity>
-        </Card>
-      )}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Network</Text>
+            <Text style={styles.infoValue}>{network || 'Unknown'}</Text>
+          </View>
 
-      {/* Actions */}
-      <View style={styles.actions}>
-        <Button
-          title="Edit Profile"
-          onPress={() => Alert.alert('Edit Profile', 'Profile editing coming soon!')}
-          variant="outline"
-          size="large"
-          fullWidth
-        />
-        
-        <Button
-          title="Logout"
-          onPress={handleLogout}
-          variant="outline"
-          size="large"
-          fullWidth
-          style={styles.logoutButton}
-        />
-      </View>
-    </ScrollView>
+          <View style={styles.divider} />
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Chain ID</Text>
+            <Text style={styles.infoValue}>{chainId || '-'}</Text>
+          </View>
+        </Card>
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <Button
+            title="Disconnect Wallet"
+            onPress={handleDisconnect}
+            variant="outline"
+            size="large"
+            fullWidth
+            style={styles.disconnectBtn}
+          />
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -218,11 +184,30 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xxl,
   },
-  errorText: {
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: theme.spacing.lg,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
     textAlign: 'center',
-    marginTop: theme.spacing.xxl,
+  },
+  emptyDescription: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.xl,
+    lineHeight: 20,
   },
 
   // Header
@@ -231,35 +216,41 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xl,
   },
   avatarLarge: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: theme.spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  avatarText: {
-    fontSize: 40,
-    fontWeight: theme.typography.fontWeight.bold,
+  avatarInitials: {
+    fontSize: 48,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   userName: {
-    fontSize: theme.typography.fontSize.xxl,
-    fontWeight: theme.typography.fontWeight.bold,
-    marginBottom: theme.spacing.xs,
+    fontSize: 22,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
   },
-  userEmail: {
-    fontSize: theme.typography.fontSize.base,
-    marginBottom: theme.spacing.md,
-  },
-  badge: {
+  demoBadge: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.warning,
   },
-  badgeText: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.semibold,
+  demoBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 
   // Sections
@@ -267,10 +258,56 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.lg,
   },
   sectionTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.colors.text,
     marginBottom: theme.spacing.md,
   },
+
+  // Address Box
+  addressBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.backgroundTertiary,
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  addressText: {
+    flex: 1,
+    fontSize: 12,
+    color: theme.colors.text,
+    fontFamily: 'monospace',
+    fontWeight: '500',
+  },
+  copyBtn: {
+    padding: theme.spacing.sm,
+    marginLeft: theme.spacing.sm,
+  },
+  copyBtnIcon: {
+    fontSize: 18,
+  },
+  copyFullBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.primary + '15',
+  },
+  copyFullBtnIcon: {
+    fontSize: 16,
+  },
+  copyFullBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors.primary,
+  },
+
+  // Info Rows
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -278,62 +315,42 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
   },
   infoLabel: {
-    fontSize: theme.typography.fontSize.base,
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
   },
   infoValue: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.medium,
-  },
-  addressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'flex-end',
-    gap: theme.spacing.xs,
-  },
-  copyIcon: {
-    fontSize: 16,
-  },
-  copyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    marginTop: theme.spacing.md,
-    gap: theme.spacing.sm,
-  },
-  copyButtonText: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.semibold,
+    fontSize: 13,
+    color: theme.colors.text,
+    fontWeight: '600',
   },
   divider: {
     height: 1,
-    backgroundColor: theme.colors.border,
+    backgroundColor: theme.colors.borderDark,
+    marginVertical: theme.spacing.sm,
   },
+
+  // Status
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: theme.spacing.xs,
   },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: theme.colors.success,
-    marginRight: theme.spacing.xs,
   },
   statusText: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.medium,
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   // Actions
   actions: {
     marginTop: theme.spacing.lg,
-    gap: theme.spacing.md,
   },
-  logoutButton: {
+  disconnectBtn: {
     borderColor: theme.colors.error,
   },
 });

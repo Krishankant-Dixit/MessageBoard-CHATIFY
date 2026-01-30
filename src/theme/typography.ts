@@ -1,33 +1,34 @@
-// Modern typography system inspired by Google Sans and Material Design
+// Modern typography system - Clean, minimalist design
+// Inspired by modern chat apps with soft, readable hierarchy
 const fontSize = {
-  xs: 11,
-  sm: 13,
-  base: 15,
-  md: 16,
-  lg: 18,
-  xl: 22,
-  xxl: 28,
-  xxxl: 34,
-  display: 42,
+  xs: 11,      // Captions
+  sm: 13,      // Small text, secondary info
+  base: 15,    // Body text, standard reading
+  md: 16,      // Alternative body
+  lg: 18,      // Larger body, emphasized
+  xl: 22,      // Subheadings
+  xxl: 28,     // Headings
+  xxxl: 34,    // Large headings
+  display: 42, // Display/hero text
 };
 
-// Google Sans style font family (fallbacks for React Native)
+// Modern system font family stack
 const fontFamily = {
-  // Primary font family
+  // Primary font family - native system fonts
   sans: 'System' as const,
   
-  // Google Sans equivalents for different platforms
-  googleSans: {
-    regular: 'GoogleSans-Regular',
-    medium: 'GoogleSans-Medium',
-    bold: 'GoogleSans-Bold',
-  },
-  
-  // System fallbacks
+  // System fonts provide best native feel and performance
   system: {
     ios: 'SF Pro Display',
     android: 'Roboto',
     default: 'System',
+  },
+  
+  // Monospace for code/addresses
+  mono: {
+    ios: 'Menlo',
+    android: 'Roboto Mono',
+    default: 'monospace',
   },
 };
 
@@ -37,29 +38,28 @@ export const typography = {
   
   // Font sizes
   fontSize,
-  // Alias for backward compatibility
   sizes: fontSize,
   
-  // Font weights
+  // Font weights - Modern hierarchy
   fontWeight: {
-    light: '300' as const,
-    regular: '400' as const,
-    medium: '500' as const,
-    semibold: '600' as const,
-    bold: '700' as const,
-    extrabold: '800' as const,
+    light: '300' as const,       // Subtle, secondary text
+    regular: '400' as const,     // Body text
+    medium: '500' as const,      // Emphasized body
+    semibold: '600' as const,    // Section headers
+    bold: '700' as const,        // Main headings
+    extrabold: '800' as const,   // Display text
   },
   
-  // Line heights - Optimized for readability
+  // Line heights - Optimized for readability with soft feel
   lineHeight: {
-    tight: 1.2,
-    snug: 1.375,
-    normal: 1.5,
-    relaxed: 1.625,
-    loose: 1.75,
+    tight: 1.2,      // Headings
+    snug: 1.375,     // Subheadings
+    normal: 1.5,     // Body text (default)
+    relaxed: 1.625,  // Long-form content
+    loose: 1.75,     // Accessibility mode
   },
   
-  // Letter spacing for polish
+  // Letter spacing - Subtle adjustments for modern look
   letterSpacing: {
     tighter: -0.5,
     tight: -0.25,
@@ -68,7 +68,7 @@ export const typography = {
     wider: 0.5,
   },
   
-  // Text styles presets
+  // Text styles presets - Minimalist & clean
   presets: {
     displayLarge: {
       fontSize: 42,
@@ -102,6 +102,7 @@ export const typography = {
       fontWeight: '600' as const,
       lineHeight: 1.4,
     },
+    // Body text - Clean and readable
     bodyLarge: {
       fontSize: 16,
       fontWeight: '400' as const,
@@ -117,6 +118,7 @@ export const typography = {
       fontWeight: '400' as const,
       lineHeight: 1.5,
     },
+    // Labels - Soft emphasis
     labelLarge: {
       fontSize: 15,
       fontWeight: '500' as const,
@@ -136,29 +138,20 @@ export const typography = {
   
   // Spacing helpers for text elements
   spacing: {
-    // Paragraph spacing
     paragraph: 16,
-    
-    // Section spacing
     section: 24,
-    
-    // Heading margins
     headingTop: 24,
     headingBottom: 12,
-    
-    // List item spacing
     listItem: 8,
   },
   
   // Text utilities
   utils: {
-    // Truncate text helper
     truncate: {
       numberOfLines: 1,
       ellipsizeMode: 'tail' as const,
     },
     
-    // Multi-line truncate
     truncateMultiline: (lines: number) => ({
       numberOfLines: lines,
       ellipsizeMode: 'tail' as const,
@@ -166,7 +159,7 @@ export const typography = {
   },
 };
 
-// Helper function to get font size with line height
+// Helper function to get font style
 export const getFontStyle = (
   size: keyof typeof fontSize,
   weight?: keyof typeof typography.fontWeight,
@@ -177,7 +170,7 @@ export const getFontStyle = (
   ...(lineHeight && { lineHeight: typography.lineHeight[lineHeight] }),
 });
 
-// Helper for responsive text scaling (optional, for future use)
+// Helper for responsive text scaling
 export const scaleFont = (size: number, scaleFactor: number = 1) => {
   return Math.round(size * scaleFactor);
 };

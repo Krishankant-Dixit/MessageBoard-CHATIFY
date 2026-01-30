@@ -71,7 +71,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   variant = 'default',
 }) => {
   const insets = useSafeAreaInsets();
-  const { theme: materialTheme } = useTheme();
+  const { colors } = useTheme();
 
   const renderSettings = () => {
     if (!showSettings) return null;
@@ -109,8 +109,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         variant === 'prominent' && styles.containerProminent,
         showShadow && styles.containerShadow,
         { paddingTop: insets.top || theme.spacing.md },
-        { backgroundColor: materialTheme.colors.surface },
-        { borderBottomColor: materialTheme.colors.border },
+        { backgroundColor: colors.card },
+        { borderBottomColor: colors.border },
         style,
       ]}
     >
@@ -122,7 +122,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               style={[
                 styles.title,
                 variant === 'prominent' && styles.titleProminent,
-                { color: materialTheme.colors.textPrimary },
+                { color: colors.text },
               ]}
               numberOfLines={1}
             >
@@ -132,7 +132,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               <Text
                 style={[
                   styles.subtitle,
-                  { color: materialTheme.colors.textSecondary },
+                  { color: colors.textSecondary },
                 ]}
                 numberOfLines={1}
               >

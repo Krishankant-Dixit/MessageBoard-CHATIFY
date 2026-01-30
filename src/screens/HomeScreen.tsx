@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
   Linking,
   ActivityIndicator,
   StatusBar,
+  Animated,
+  Dimensions,
+  ScaledSize,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -17,10 +20,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useWeb3, formatAddress } from '../context/Web3Context';
-import { Button, MessageCard } from '../components';
+import { useTheme } from '../context/ThemeContext';
+import { useScaleAnimation, usePulseAnimation, useFadeAnimation } from '../hooks';
+import { Button, ChatInput } from '../components';
 import { theme } from '../theme';
 import { Message } from '../contracts/MessageBoard';
 import { analyzeSentiment } from '../services/geminiService';
+import { formatTimestamp } from '../utils/helpers';
+import { MAX_MESSAGE_LENGTH } from '../utils/constants';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<any, 'Chats'>,
@@ -33,20 +40,47 @@ interface HomeScreenProps {
 
 interface DisplayMessage extends Message {
   sentiment?: 'positive' | 'neutral' | 'negative';
+  safetyStatus?: 'safe' | 'warning' | 'unsafe';
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { isConnected, account, connectWallet, disconnectWallet, getMessages } = useWeb3();
+  const { isConnected, account, connectWallet, disconnectWallet, getMessages, postMessage } = useWeb3();
+  const { colors, isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [sending, setSending] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+  const scrollAnim = useRef(new Animated.Value(0)).current;
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Animation hooks
+  const loadingPulse = usePulseAnimation(loading);
+  const sendingScale = useScaleAnimation(sending);
+  const { opacityAnim: messageOpacity } = useFadeAnimation(!loading);
+  
+  const headerOpacity = scrollAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0.8],
+  });
+  const inputBarHeight = 96;
 
   useEffect(() => {
     if (isConnected) {
       loadMessages();
     }
   }, [isConnected]);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const loadMessages = async () => {
     setLoading(true);
@@ -59,16 +93,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             return {
               ...msg,
               sentiment: sentimentResult.sentiment,
+              safetyStatus: getMockSafetyStatus(msg),
             };
           } catch (error) {
-            return msg;
+            return {
+              ...msg,
+              sentiment: getMockSentiment(msg),
+              safetyStatus: getMockSafetyStatus(msg),
+            };
           }
         })
       );
-      setMessages(messagesWithSentiment);
+      // Reverse to show newest at bottom
+      setMessages(messagesWithSentiment.reverse());
     } catch (error) {
       console.error('Error loading messages:', error);
-      Alert.alert('Error', 'Failed to load messages from blockchain');
+      Alert.alert('Error', 'Failed to load messages');
     } finally {
       setLoading(false);
     }
@@ -85,21 +125,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       await connectWallet();
       Alert.alert('Success', '✓ Wallet connected successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to connect wallet. Check your RPC URL configuration.');
+      Alert.alert('Error', 'Failed to connect wallet.');
     }
   };
 
   const handleDisconnect = () => {
     Alert.alert(
       'Disconnect Wallet?',
-      'Are you sure you want to disconnect your wallet?',
+      'Are you sure?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Disconnect',
           onPress: () => {
             disconnectWallet();
-            Alert.alert('Disconnected', 'Wallet disconnected successfully.');
+            Alert.alert('Disconnected', 'Wallet disconnected.');
           },
           style: 'destructive',
         },
@@ -112,8 +152,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);
-      } else {
-        Alert.alert('Error', `Cannot open URL: ${url}`);
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to open link');
@@ -125,86 +163,292 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       Alert.alert('Wallet Required', 'Please connect your wallet first');
       return;
     }
-    navigation.navigate('MainTabs' as any, { screen: 'Post' });
+    navigation.navigate('MainTabs' as any, { screen: 'NewMessage' });
   };
 
-  const renderMessage = ({ item }: { item: DisplayMessage }) => {
-    const getSentimentIcon = (sentiment?: string) => {
-      switch (sentiment) {
-        case 'positive':
-          return '😊';
-        case 'negative':
-          return '😔';
-        default:
-          return '😐';
-      }
-    };
+  const handleInputChange = (text: string) => {
+    setMessageInput(text);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    if (text.trim().length === 0) {
+      setIsTyping(false);
+      return;
+    }
+
+    setIsTyping(true);
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 1200);
+  };
+
+  const handleEmojiPress = () => {
+    if (messageInput.length >= MAX_MESSAGE_LENGTH) {
+      return;
+    }
+    const updatedMessage = `${messageInput}😊`;
+    handleInputChange(updatedMessage);
+  };
+
+  const handleSendMessage = async () => {
+    if (!isConnected) {
+      Alert.alert('Wallet Required', 'Please connect your wallet first');
+      return;
+    }
+
+    const trimmed = messageInput.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    setSending(true);
+    try {
+      await postMessage(trimmed);
+      setMessageInput('');
+      setIsTyping(false);
+      await loadMessages();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const getSentimentColor = (sentiment?: string) => {
+    switch (sentiment) {
+      case 'positive':
+        return theme.colors.success;
+      case 'negative':
+        return theme.colors.error;
+      default:
+        return theme.colors.warning;
+    }
+  };
+
+  const getSafetyColor = (status?: string) => {
+    switch (status) {
+      case 'unsafe':
+        return theme.colors.error;
+      case 'warning':
+        return theme.colors.warning;
+      default:
+        return theme.colors.success;
+    }
+  };
+
+  const getSentimentLabel = (sentiment?: string) => {
+    switch (sentiment) {
+      case 'positive':
+        return 'Positive';
+      case 'negative':
+        return 'Negative';
+      default:
+        return 'Neutral';
+    }
+  };
+
+  const getSafetyLabel = (status?: string) => {
+    switch (status) {
+      case 'unsafe':
+        return 'Unsafe';
+      case 'warning':
+        return 'Review';
+      default:
+        return 'Safe';
+    }
+  };
+
+  const getSentimentEmoji = (sentiment?: string) => {
+    switch (sentiment) {
+      case 'positive':
+        return '😊';
+      case 'negative':
+        return '😔';
+      default:
+        return '😐';
+    }
+  };
+
+  const getSafetyEmoji = (status?: string) => {
+    switch (status) {
+      case 'unsafe':
+        return '⛔';
+      case 'warning':
+        return '⚠️';
+      default:
+        return '✅';
+    }
+  };
+
+  const getMockSentiment = (msg: Message): 'positive' | 'neutral' | 'negative' => {
+    const seed = `${msg.id}-${msg.sender}-${msg.timestamp}`;
+    const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const bucket = hash % 3;
+    if (bucket === 0) return 'positive';
+    if (bucket === 1) return 'neutral';
+    return 'negative';
+  };
+
+  const getMockSafetyStatus = (msg: Message): 'safe' | 'warning' | 'unsafe' => {
+    const seed = `${msg.content}-${msg.sender}`;
+    const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const bucket = hash % 10;
+    if (bucket === 0) return 'unsafe';
+    if (bucket <= 2) return 'warning';
+    return 'safe';
+  };
+
+  const getAvatarInitials = (address: string) => {
+    return address.slice(2, 4).toUpperCase();
+  };
+
+  const getAvatarColor = (address: string) => {
+    const colors = [
+      '#FF6B6B',
+      '#4ECDC4',
+      '#45B7D1',
+      '#FFA07A',
+      '#98D8C8',
+      '#F7DC6F',
+      '#BB8FCE',
+      '#85C1E2',
+    ];
+    const index = parseInt(address.slice(2, 4), 16) % colors.length;
+    return colors[index];
+  };
+
+  const renderMessage = ({ item, index }: { item: DisplayMessage; index: number }) => {
+    const initials = getAvatarInitials(item.sender);
+    const avatarColor = getAvatarColor(item.sender);
+    const isLastMessage = index === messages.length - 1;
 
     return (
-      <MessageCard
-        message={{
-          ...item,
-          sender: item.sender,
-          sentimentIcon: getSentimentIcon(item.sentiment),
-        }}
-        variant="list"
-        onPress={() => {
-          Alert.alert(
-            'Message Details',
-            `From: ${formatAddress(item.sender)}\nContent: ${item.content}\nEdited: ${item.isEdited ? 'Yes' : 'No'}`
-          );
-        }}
-      />
+      <Animated.View
+        style={[
+          styles.messageWrapper,
+          {
+            opacity: Animated.add(scrollAnim, 1),
+          },
+        ]}
+      >
+        <View style={styles.messageContainer}>
+          {/* Avatar */}
+          <View
+            style={[
+              styles.avatar,
+              { backgroundColor: avatarColor },
+            ]}
+          >
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+
+          {/* Message Content */}
+          <View style={styles.messageBubbleWrapper}>
+            {/* Sender Info */}
+            <View style={styles.senderInfo}>
+              <Text style={styles.senderAddress}>
+                {formatAddress(item.sender)}
+              </Text>
+              <Text style={styles.timestamp}>
+                {formatTimestamp(item.timestamp)}
+              </Text>
+            </View>
+
+            {/* Message Bubble */}
+            <View style={[styles.messageBubble, styles.receivedBubble]}>
+              <Text style={styles.messageText}>{item.content}</Text>
+              {item.isEdited && (
+                <Text style={styles.editedLabel}>(edited)</Text>
+              )}
+            </View>
+
+            {/* Sentiment Badge */}
+            <View style={styles.badgeContainer}>
+              <View
+                style={[
+                  styles.sentimentBadge,
+                  { backgroundColor: getSentimentColor(item.sentiment) + '20' },
+                  { borderColor: getSentimentColor(item.sentiment) },
+                ]}
+              >
+                <Text style={styles.sentimentEmoji}>
+                  {getSentimentEmoji(item.sentiment)}
+                </Text>
+                <Text
+                  style={[
+                    styles.sentimentLabel,
+                    { color: getSentimentColor(item.sentiment) },
+                  ]}
+                >
+                  {getSentimentLabel(item.sentiment)}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.sentimentBadge,
+                  { backgroundColor: getSafetyColor(item.safetyStatus) + '20' },
+                  { borderColor: getSafetyColor(item.safetyStatus) },
+                ]}
+              >
+                <Text style={styles.sentimentEmoji}>
+                  {getSafetyEmoji(item.safetyStatus)}
+                </Text>
+                <Text
+                  style={[
+                    styles.sentimentLabel,
+                    { color: getSafetyColor(item.safetyStatus) },
+                  ]}
+                >
+                  {getSafetyLabel(item.safetyStatus)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {isLastMessage && messages.length > 0 && (
+          <View style={styles.divider} />
+        )}
+      </Animated.View>
     );
   };
 
   if (!isConnected) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-        
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          backgroundColor={colors.background}
+        />
+
         <View style={styles.welcomeContainer}>
           <View style={styles.welcomeHeader}>
             <View style={styles.logoContainer}>
               <Text style={styles.logoIcon}>💬</Text>
             </View>
-            <Text style={styles.title}>PublicNote</Text>
+            <Text style={styles.title}>Chatify</Text>
             <Text style={styles.subtitle}>
-              Decentralized messaging powered by blockchain technology
+              Decentralized messaging with AI insights
             </Text>
           </View>
 
           <View style={styles.featureGrid}>
             <View style={styles.featureCard}>
-              <View style={styles.featureIconContainer}>
-                <Text style={styles.featureIcon}>⛓️</Text>
-              </View>
+              <Text style={styles.featureIcon}>⛓️</Text>
               <Text style={styles.featureTitle}>Decentralized</Text>
-              <Text style={styles.featureDescription}>No central authority</Text>
             </View>
-
             <View style={styles.featureCard}>
-              <View style={styles.featureIconContainer}>
-                <Text style={styles.featureIcon}>🔒</Text>
-              </View>
-              <Text style={styles.featureTitle}>Immutable</Text>
-              <Text style={styles.featureDescription}>Tamper-proof records</Text>
+              <Text style={styles.featureIcon}>🔒</Text>
+              <Text style={styles.featureTitle}>Secure</Text>
             </View>
-
             <View style={styles.featureCard}>
-              <View style={styles.featureIconContainer}>
-                <Text style={styles.featureIcon}>🤖</Text>
-              </View>
+              <Text style={styles.featureIcon}>🤖</Text>
               <Text style={styles.featureTitle}>AI-Powered</Text>
-              <Text style={styles.featureDescription}>Smart analysis</Text>
             </View>
-
             <View style={styles.featureCard}>
-              <View style={styles.featureIconContainer}>
-                <Text style={styles.featureIcon}>⚡</Text>
-              </View>
+              <Text style={styles.featureIcon}>⚡</Text>
               <Text style={styles.featureTitle}>Fast</Text>
-              <Text style={styles.featureDescription}>Quick transactions</Text>
             </View>
           </View>
 
@@ -217,24 +461,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               fullWidth
               icon="🔗"
             />
-
-            <View style={styles.linksContainer}>
-              <TouchableOpacity
-                style={styles.linkButton}
-                onPress={() => openLink('https://remix.ethereum.org')}
-              >
-                <Text style={styles.linkIcon}>📝</Text>
-                <Text style={styles.linkText}>Deploy Contract</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.linkButton}
-                onPress={() => openLink('https://metamask.io')}
-              >
-                <Text style={styles.linkIcon}>🦊</Text>
-                <Text style={styles.linkText}>Get MetaMask</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </View>
@@ -242,85 +468,152 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.headerIconContainer}>
-            <Text style={styles.headerIcon}>💬</Text>
-          </View>
-          <View>
-            <Text style={styles.headerTitle}>Messages</Text>
-            <View style={styles.walletBadge}>
-              <View style={styles.onlineDot} />
-              <Text style={styles.walletAddress}>
-                {account ? formatAddress(account) : 'Not connected'}
-              </Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+      />
+
+      {/* Header */}
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: headerOpacity,
+          },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIcon}>
+              <Text style={styles.headerIconText}>💬</Text>
+            </View>
+            <View>
+              <Text style={styles.headerTitle}>Messages</Text>
+              <View style={styles.walletBadge}>
+                <View style={styles.onlineDot} />
+                <Text style={styles.walletAddress}>
+                  {formatAddress(account || '')}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.composeButton}
-          onPress={handlePostMessage}
-        >
-          <Text style={styles.composeIcon}>✏️</Text>
-        </TouchableOpacity>
-      </View>
 
+          <TouchableOpacity
+            style={styles.composeButton}
+            onPress={handlePostMessage}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.composeIcon}>✏️</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      {/* Messages or Empty/Loading State */}
       {loading && !refreshing ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading messages...</Text>
+        <View style={[styles.centerContainer, { paddingBottom: inputBarHeight + (insets.bottom || 0) }]}>
+          <Animated.View style={{ opacity: loadingPulse }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </Animated.View>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading messages...</Text>
         </View>
       ) : messages.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <View style={styles.emptyIconContainer}>
+        <View style={[styles.centerContainer, { paddingBottom: inputBarHeight + (insets.bottom || 0) }]}>
+          <View style={[styles.emptyIconContainer, { backgroundColor: colors.backgroundTertiary }]}>
             <Text style={styles.emptyIcon}>📭</Text>
           </View>
-          <Text style={styles.emptyTitle}>No messages yet</Text>
-          <Text style={styles.emptyDescription}>
-            Be the first to post a message on the blockchain
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No messages yet</Text>
+          <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
+            Be the first to post a message!
           </Text>
           <Button
-            title="Post First Message"
+            title="Post Message"
             onPress={handlePostMessage}
             size="large"
-            style={styles.actionButton}
           />
         </View>
       ) : (
-        <FlatList
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={theme.colors.primary}
-              colors={[theme.colors.primary]}
-            />
-          }
-        />
+        <View style={styles.listWrapper}>
+          {sending && (
+            <Animated.View 
+              style={[
+                styles.postingBanner,
+                { transform: [{ scale: sendingScale }] }
+              ]}
+            >
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.postingText, { color: colors.textSecondary }]}>Posting on-chain...</Text>
+            </Animated.View>
+          )}
+          <Animated.FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingBottom: inputBarHeight + (insets.bottom || 0) + 24 },
+            ]}
+            showsVerticalScrollIndicator={true}
+            scrollEventThrottle={16}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollAnim } } }],
+              { useNativeDriver: false }
+            )}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            }
+          />
+        </View>
       )}
 
+      {/* Fixed Input Bar */}
+      <View
+        style={[
+          styles.inputBarContainer,
+          { paddingBottom: Math.max(insets.bottom, theme.spacing.sm) },
+        ]}
+      >
+        {isTyping && (
+          <View style={styles.typingIndicator}>
+            <View style={styles.typingDot} />
+            <Text style={styles.typingText}>Typing...</Text>
+          </View>
+        )}
+        <ChatInput
+          value={messageInput}
+          onChangeText={handleInputChange}
+          onSend={handleSendMessage}
+          placeholder="Write a message..."
+          maxLength={MAX_MESSAGE_LENGTH}
+          showCharCounter
+          disabled={sending}
+          actionButton={{
+            icon: '😊',
+            onPress: handleEmojiPress,
+          }}
+        />
+      </View>
+
+      {/* Floating Action Button */}
       {isConnected && (
         <View
           style={[
             styles.fab,
-            { bottom: theme.spacing.xl + (insets.bottom || theme.spacing.md) },
+            { bottom: inputBarHeight + (insets.bottom || theme.spacing.md) + theme.spacing.lg },
           ]}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.fabButton}
             onPress={handlePostMessage}
             activeOpacity={0.8}
           >
-            <Text style={styles.fabIcon}>+</Text>
+            <Text style={styles.fabIcon}>✏️</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -333,8 +626,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  
-  // Welcome Screen Styles
+
+  // Welcome Screen
   welcomeContainer: {
     flex: 1,
     paddingHorizontal: theme.spacing.xl,
@@ -348,7 +641,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 80,
     height: 80,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 40,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -363,21 +656,20 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   title: {
-    fontSize: theme.typography.fontSize.xxxl,
-    fontWeight: theme.typography.fontWeight.extrabold,
+    fontSize: 32,
+    fontWeight: '800',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
     textAlign: 'center',
-    letterSpacing: theme.typography.letterSpacing.tight,
   },
   subtitle: {
-    fontSize: theme.typography.fontSize.base,
+    fontSize: 14,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: theme.typography.fontSize.base * theme.typography.lineHeight.relaxed,
+    lineHeight: 20,
     paddingHorizontal: theme.spacing.md,
   },
-  
+
   // Feature Grid
   featureGrid: {
     flexDirection: 'row',
@@ -388,7 +680,7 @@ const styles = StyleSheet.create({
   featureCard: {
     width: '48%',
     backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: 16,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.md,
     alignItems: 'center',
@@ -398,116 +690,78 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  featureIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.backgroundTertiary,
-    alignItems: 'center',
-    justifyContent: 'center',
+  featureIcon: {
+    fontSize: 32,
     marginBottom: theme.spacing.md,
   },
-  featureIcon: {
-    fontSize: 28,
-  },
   featureTitle: {
-    fontSize: theme.typography.fontSize.md,
-    fontWeight: theme.typography.fontWeight.semibold,
+    fontSize: 14,
+    fontWeight: '600',
     color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  featureDescription: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textSecondary,
     textAlign: 'center',
   },
-  
+
   // Action Container
   actionContainer: {
     marginTop: 'auto',
   },
-  linksContainer: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-    marginTop: theme.spacing.lg,
-  },
-  linkButton: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundTertiary,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.md,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  linkIcon: {
-    fontSize: theme.typography.fontSize.xl,
-    marginBottom: theme.spacing.xs,
-  },
-  linkText: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.fontSize.xs,
-    fontWeight: theme.typography.fontWeight.medium,
-    textAlign: 'center',
-  },
-  
-  // Header Styles
+
+  // Header
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    paddingTop: theme.spacing.xxl,
     backgroundColor: theme.colors.background,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderDark,
+    paddingTop: theme.spacing.xxl,
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.md,
   },
-  headerIconContainer: {
+  headerIcon: {
     width: 44,
     height: 44,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 22,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerIcon: {
+  headerIconText: {
     fontSize: 22,
   },
   headerTitle: {
-    fontSize: theme.typography.fontSize.xl,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: 18,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   walletBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: theme.spacing.xs,
+    marginTop: 4,
   },
   onlineDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: theme.colors.online,
+    backgroundColor: '#4CAF50',
     marginRight: theme.spacing.xs,
   },
   walletAddress: {
-    fontSize: theme.typography.fontSize.sm,
+    fontSize: 12,
     color: theme.colors.textSecondary,
-    fontWeight: theme.typography.fontWeight.medium,
+    fontWeight: '500',
   },
   composeButton: {
     width: 44,
     height: 44,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 22,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -520,13 +774,159 @@ const styles = StyleSheet.create({
   composeIcon: {
     fontSize: 20,
   },
-  
-  // List Styles
+
+  // Message Feed
   listContent: {
     paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
   },
-  
-  // Center Container
+  listWrapper: {
+    flex: 1,
+  },
+  postingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.backgroundTertiary,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderDark,
+  },
+  postingText: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontWeight: '600',
+  },
+  inputBarContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.borderDark,
+  },
+  typingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
+  },
+  typingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.primary,
+    marginRight: theme.spacing.xs,
+  },
+  typingText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  messageWrapper: {
+    marginBottom: theme.spacing.md,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.md,
+  },
+
+  // Avatar
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  avatarText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+
+  // Message Bubble
+  messageBubbleWrapper: {
+    flex: 1,
+  },
+  senderInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: 4,
+  },
+  senderAddress: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  timestamp: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+  },
+  messageBubble: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  receivedBubble: {
+    backgroundColor: theme.colors.backgroundTertiary,
+    borderBottomLeftRadius: 4,
+  },
+  sentBubble: {
+    backgroundColor: theme.colors.primary,
+    borderBottomRightRadius: 4,
+  },
+  messageText: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: theme.colors.text,
+  },
+  editedLabel: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+
+  // Sentiment Badge
+  badgeContainer: {
+    marginLeft: 0,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  sentimentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  sentimentEmoji: {
+    fontSize: 12,
+  },
+  sentimentLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.borderDark,
+    marginVertical: theme.spacing.md,
+  },
+
+  // Center Container (Empty/Loading)
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -536,13 +936,13 @@ const styles = StyleSheet.create({
   loadingText: {
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.lg,
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.medium,
+    fontSize: 15,
+    fontWeight: '500',
   },
   emptyIconContainer: {
     width: 100,
     height: 100,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 50,
     backgroundColor: theme.colors.backgroundTertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -552,22 +952,19 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   emptyTitle: {
-    fontSize: theme.typography.fontSize.xl,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: 18,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
   emptyDescription: {
-    fontSize: theme.typography.fontSize.base,
+    fontSize: 14,
     color: theme.colors.textSecondary,
     textAlign: 'center',
     marginBottom: theme.spacing.xl,
-    lineHeight: theme.typography.fontSize.base * theme.typography.lineHeight.relaxed,
+    lineHeight: 20,
   },
-  actionButton: {
-    marginTop: theme.spacing.md,
-  },
-  
+
   // FAB (Floating Action Button)
   fab: {
     position: 'absolute',
@@ -577,7 +974,7 @@ const styles = StyleSheet.create({
   fabButton: {
     width: 60,
     height: 60,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 30,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -588,8 +985,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   fabIcon: {
-    fontSize: 32,
-    color: theme.colors.textOnPrimary,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: 28,
+    color: 'white',
+    fontWeight: '700',
   },
 });

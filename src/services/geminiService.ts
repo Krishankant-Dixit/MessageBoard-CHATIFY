@@ -2,9 +2,12 @@
  * Gemini AI Service
  * Handles integration with Google's Generative AI API
  * Provides message analysis, summarization, and smart suggestions
+ * 
+ * Respects DEMO_MODE flag - when enabled, returns mock responses without API calls
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { DEMO_MODE, simulateNetworkDelay } from '../utils/constants';
 
 // Initialize Gemini with API key from environment
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
@@ -16,7 +19,7 @@ let genAI: GoogleGenerativeAI | null = null;
  * Must be called before using any Gemini functions
  */
 export const initializeGemini = (apiKey: string) => {
-  if (apiKey) {
+  if (apiKey && !DEMO_MODE) {
     genAI = new GoogleGenerativeAI(apiKey);
   }
 };
@@ -25,6 +28,7 @@ export const initializeGemini = (apiKey: string) => {
  * Check if Gemini is properly initialized
  */
 export const isGeminiReady = (): boolean => {
+  if (DEMO_MODE) return false; // Always disabled in demo mode
   return genAI !== null && GEMINI_API_KEY !== '';
 };
 
@@ -40,6 +44,15 @@ export const analyzeMessageSafety = async (
   recommendation: string;
 }> => {
   try {
+    // Demo mode: return mock safety response
+    if (DEMO_MODE) {
+      await simulateNetworkDelay();
+      return {
+        isSafe: true,
+        recommendation: '✓ Message looks good! (Demo mode)',
+      };
+    }
+
     if (!isGeminiReady()) {
       return {
         isSafe: true,
@@ -92,6 +105,12 @@ export const summarizeMessages = async (
   messages: Array<{ sender: string; content: string; timestamp: string }>
 ): Promise<string> => {
   try {
+    // Demo mode: return mock summary
+    if (DEMO_MODE) {
+      await simulateNetworkDelay();
+      return '📝 Demo: This conversation covers key technical discussions about blockchain integration and design improvements. (Demo mode - mock summary)';
+    }
+
     if (!isGeminiReady()) {
       return 'Summarization unavailable';
     }
@@ -124,6 +143,16 @@ export const generateSmartSuggestions = async (
   conversationContext: string
 ): Promise<string[]> => {
   try {
+    // Demo mode: return mock suggestions
+    if (DEMO_MODE) {
+      await simulateNetworkDelay();
+      return [
+        '✓ "Can you provide more details on the timeline?"',
+        '✓ "This looks great! Let\'s discuss implementation next week."',
+        '✓ "I agree, and we should also consider the budget impact."',
+      ];
+    }
+
     if (!isGeminiReady()) {
       return [];
     }
@@ -158,6 +187,12 @@ Example format: ["suggestion 1", "suggestion 2", "suggestion 3"]`;
  */
 export const extractTopics = async (message: string): Promise<string[]> => {
   try {
+    // Demo mode: return mock topics
+    if (DEMO_MODE) {
+      await simulateNetworkDelay();
+      return ['blockchain', 'development', 'web3'];
+    }
+
     if (!isGeminiReady()) {
       return [];
     }
@@ -197,6 +232,16 @@ export const analyzeSentiment = async (
   explanation: string;
 }> => {
   try {
+    // Demo mode: return mock sentiment
+    if (DEMO_MODE) {
+      await simulateNetworkDelay();
+      return {
+        sentiment: 'positive',
+        score: 0.8,
+        explanation: 'Message has an enthusiastic and collaborative tone (Demo mode)',
+      };
+    }
+
     if (!isGeminiReady()) {
       return {
         sentiment: 'neutral',
@@ -249,6 +294,12 @@ export const translateMessage = async (
   targetLanguage: string
 ): Promise<string> => {
   try {
+    // Demo mode: return mock translation
+    if (DEMO_MODE) {
+      await simulateNetworkDelay();
+      return `[${targetLanguage}] ${message} (Demo mode - mock translation)`;
+    }
+
     if (!isGeminiReady()) {
       return 'Translation unavailable';
     }
@@ -276,6 +327,12 @@ export const generateResponseSuggestion = async (
   conversationTopic: string
 ): Promise<string> => {
   try {
+    // Demo mode: return mock suggestion
+    if (DEMO_MODE) {
+      await simulateNetworkDelay();
+      return 'Thanks for sharing! I think this approach makes sense. Let\'s discuss further in our next sync. (Demo mode - mock suggestion)';
+    }
+
     if (!isGeminiReady()) {
       return '';
     }

@@ -5,21 +5,20 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
+  HomeScreen,
   PostMessageScreen, 
   LoginScreen, 
-  ChatRoomsScreen, 
   ChatRoomScreen, 
   ProfileScreen,
   SettingsScreen 
 } from '../screens';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { theme } from '../theme';
 
 // Tab navigation types
 export type TabParamList = {
   Chats: undefined;
-  Post: undefined;
+  NewMessage: undefined;
   Profile: undefined;
   Settings: undefined;
 };
@@ -36,7 +35,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 // Bottom Tabs Navigator
 const MainTabs: React.FC = () => {
-  const { theme: materialTheme } = useTheme();
+  const { colors, isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -44,34 +43,36 @@ const MainTabs: React.FC = () => {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: materialTheme.colors.surface,
-          borderTopColor: materialTheme.colors.border,
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
-          paddingBottom: Math.max(insets.bottom, 8),
-          paddingTop: 8,
-          height: 60 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 6),
+          paddingTop: 6,
+          height: 56 + insets.bottom,
         },
-        tabBarActiveTintColor: materialTheme.colors.primary,
-        tabBarInactiveTintColor: materialTheme.colors.textSecondary,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
         },
       }}
     >
       <Tab.Screen
         name="Chats"
-        component={ChatRoomsScreen}
+        component={HomeScreen}
         options={{
+          tabBarLabel: 'Chats',
           tabBarIcon: ({ color, size, focused }) => (
             <Text style={{ fontSize: focused ? 26 : 24 }}>💬</Text>
           ),
         }}
       />
       <Tab.Screen
-        name="Post"
+        name="NewMessage"
         component={PostMessageScreen}
         options={{
+          tabBarLabel: 'New Message',
           tabBarIcon: ({ color, size, focused }) => (
             <Text style={{ fontSize: focused ? 26 : 24 }}>✏️</Text>
           ),
@@ -81,6 +82,7 @@ const MainTabs: React.FC = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
+          tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size, focused }) => (
             <Text style={{ fontSize: focused ? 26 : 24 }}>👤</Text>
           ),
@@ -90,6 +92,7 @@ const MainTabs: React.FC = () => {
         name="Settings"
         component={SettingsScreen}
         options={{
+          tabBarLabel: 'Settings',
           tabBarIcon: ({ color, size, focused }) => (
             <Text style={{ fontSize: focused ? 26 : 24 }}>⚙️</Text>
           ),
@@ -101,12 +104,12 @@ const MainTabs: React.FC = () => {
 
 export const AppNavigator: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const { theme: materialTheme } = useTheme();
+  const { colors, isDarkMode } = useTheme();
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: materialTheme.colors.background }]}>
-        <ActivityIndicator size="large" color={materialTheme.colors.primary} />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -114,14 +117,14 @@ export const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer
       theme={{
-        dark: true,
+        dark: isDarkMode,
         colors: {
-          primary: materialTheme.colors.primary || '#6A7FE1',
-          background: materialTheme.colors.background,
-          card: materialTheme.colors.cardBackground || materialTheme.colors.surface,
-          text: materialTheme.colors.textPrimary,
-          border: materialTheme.colors.border,
-          notification: materialTheme.colors.accent,
+          primary: colors.primary,
+          background: colors.background,
+          card: colors.card,
+          text: colors.text,
+          border: colors.border,
+          notification: colors.error,
         },
         fonts: {
           regular: {
@@ -146,7 +149,7 @@ export const AppNavigator: React.FC = () => {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: materialTheme.colors.background },
+          contentStyle: { backgroundColor: colors.background },
           animation: 'slide_from_right',
         }}
       >
