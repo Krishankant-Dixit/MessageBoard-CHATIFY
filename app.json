@@ -25,6 +25,16 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.company.messageboard"
     },
-    "platforms": ["ios", "android"]
+    "web": {
+      "bundler": "webpack"
+    },
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

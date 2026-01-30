@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { DEMO_WALLET_ADDRESS, DEFAULT_CHAIN_ID, RPC_URL, DEMO_MODE, simulateNetworkDelay, MOCK_MESSAGES } from '../utils/constants';
+import { DEMO_WALLET_ADDRESS, DEFAULT_CHAIN_ID, RPC_URL, DEMO_MODE, IS_WEB, simulateNetworkDelay, MOCK_MESSAGES } from '../utils/constants';
 import { MESSAGE_BOARD_ABI, MESSAGE_BOARD_ADDRESS, Message } from '../contracts/MessageBoard';
 import {
   getOrCreateDemoWallet,
@@ -95,6 +95,8 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
   const [network, setNetwork] = useState<string | null>(null);
   const [demoWallet, setDemoWallet] = useState<DemoWallet | null>(null);
 
+  const isWebDemo = IS_WEB;
+
   // Load stored connection state on mount
   useEffect(() => {
     loadConnectionState();
@@ -105,6 +107,9 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
    */
   const loadConnectionState = async () => {
     try {
+      if (isWebDemo) {
+        return;
+      }
       const state = await getConnectionState();
       if (state && state.isConnected && state.walletAddress) {
         // Restore connection state
@@ -133,23 +138,44 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
     try {
       console.log('Attempting to connect wallet...');
 
-      if (DEMO_MODE) {
+      if (DEMO_MODE || isWebDemo) {
         // Demo mode: generate or retrieve stored demo wallet
         await simulateDemoConnectDelay();
-        
+
+        if (isWebDemo) {
+          const simulatedWallet: DemoWallet = {
+            address: DEMO_WALLET_ADDRESS,
+            privateKey: '0x' + '0'.repeat(64),
+            name: 'Web Demo Wallet',
+            createdAt: Date.now(),
+            lastConnected: Date.now(),
+          };
+
+          setDemoWallet(simulatedWallet);
+          setAccount(simulatedWallet.address);
+          setIsConnected(true);
+          setChainId(DEFAULT_CHAIN_ID);
+          setNetwork(getDemoNetworkName(DEFAULT_CHAIN_ID));
+
+          console.log('✓ Web demo wallet connected:', formatAddress(simulatedWallet.address));
+          console.log('  - Address:', simulatedWallet.address);
+          console.log('  - Network:', getDemoNetworkName(DEFAULT_CHAIN_ID));
+          return simulatedWallet.address;
+        }
+
         // Get or create demo wallet with persistent storage
         const wallet = await getOrCreateDemoWallet('Demo User');
         setDemoWallet(wallet);
-        
+
         // Set connection state
         setAccount(wallet.address);
         setIsConnected(true);
         setChainId(DEFAULT_CHAIN_ID);
         setNetwork(getDemoNetworkName(DEFAULT_CHAIN_ID));
-        
+
         // Update last connected timestamp
         await updateWalletLastConnected();
-        
+
         // Store connection state
         await storeConnectionState({
           isConnected: true,
@@ -158,7 +184,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
           network: getDemoNetworkName(DEFAULT_CHAIN_ID),
           connectedAt: Date.now(),
         });
-        
+
         console.log('✓ Demo wallet connected:', formatAddress(wallet.address));
         console.log('  - Address:', wallet.address);
         console.log('  - Network:', getDemoNetworkName(DEFAULT_CHAIN_ID));
@@ -211,7 +237,9 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
     setDemoWallet(null);
     
     // Clear stored connection state
-    await clearConnectionState();
+    if (!isWebDemo) {
+      await clearConnectionState();
+    }
     
     console.log('✓ Wallet disconnected');
   };
@@ -223,7 +251,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
     try {
       console.log(`Switching to chain ${targetChainId}...`);
       setChainId(targetChainId);
-      setNetwork(getNetworkName(targetChainId));
+      setNetwork((DEMO_MODE || isWebDemo) ? getDemoNetworkName(targetChainId) : getNetworkName(targetChainId));
     } catch (error) {
       console.error('Error switching network:', error);
       throw error;
@@ -248,7 +276,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
         throw new Error('Wallet not connected');
       }
 
-      if (DEMO_MODE) {
+      if (DEMO_MODE || isWebDemo) {
         // Demo mode: return mock transaction hash
         await simulateNetworkDelay();
         const mockTxHash = `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
@@ -290,7 +318,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
    */
   const getMessages = async (limit: number = 10, offset: number = 0): Promise<Message[]> => {
     try {
-      if (DEMO_MODE) {
+      if (DEMO_MODE || isWebDemo) {
         // Demo mode: return mock messages with simulated delay
         await simulateNetworkDelay();
         return getDemoMessages(limit, offset);
@@ -328,7 +356,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
    */
   const getMessageCount = async (): Promise<number> => {
     try {
-      if (DEMO_MODE) {
+      if (DEMO_MODE || isWebDemo) {
         // Demo mode: return mock count with simulated delay
         await simulateNetworkDelay();
         return MOCK_MESSAGES.length;

@@ -4,8 +4,8 @@
  */
 
 import {
-  DemoWallet,
-  ConnectionState,
+  type DemoWallet,
+  type ConnectionState,
   getOrCreateDemoWallet,
   getStoredDemoWallet,
   deleteDemoWallet,
@@ -223,9 +223,9 @@ Last Connected: ${lastConnected}
 
 // Re-export for convenience
 export {
-  type DemoWallet,
-  type ConnectionState,
   formatWalletAddress,
   isValidEthereumAddress,
   getDemoWalletBalance,
 };
+
+export type { DemoWallet, ConnectionState };

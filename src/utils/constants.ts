@@ -1,5 +1,7 @@
 // Application constants
 
+import { Platform } from 'react-native';
+
 /**
  * DEMO_MODE: Global flag to enable demo/test mode
  * When enabled:
@@ -10,7 +12,9 @@
  * 
  * Set to false for production or when blockchain/AI is properly configured
  */
-export const DEMO_MODE = true;
+export const IS_WEB = Platform.OS === 'web';
+const demoEnv = process.env.EXPO_PUBLIC_DEMO_MODE;
+export const DEMO_MODE = IS_WEB || demoEnv !== 'false';
 
 /**
  * Network delay simulation in demo mode (milliseconds)
