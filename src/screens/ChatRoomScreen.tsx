@@ -39,15 +39,32 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
   const { user } = useAuth();
   const { isConnected } = useWeb3();
   const insets = useSafeAreaInsets();
-  const [messages, setMessages] = useState<Message[]>([]);
+  type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  type LocalMessage = Message & {
+    demoTxHash?: string;
+    isSystem?: boolean;
+    statusIcon?: 'check' | 'check-all';
+  };
+  const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [isReplyTyping, setIsReplyTyping] = useState(false);
+  const listRef = useRef<FlatList>(null);
 
   const chatType = (route.params as any)?.chatType as 'personal' | 'group' | 'company' | undefined;
   const chatAvatar = (route.params as any)?.chatAvatar as string | undefined;
+  const chatAvatarIcon = (chatAvatar as IconName) || 'message-text';
   const chatTypeLabel = chatType === 'company' ? 'Company' : chatType === 'group' ? 'Group' : 'Personal';
   const isGroupChat = chatType === 'group' || chatType === 'company';
+
+  const demoReplies = [
+    'Hello 👋',
+    'Thanks for the update.',
+    'Noted, will check this.',
+    'Sounds good.',
+    'We’ll follow up shortly.',
+  ];
 
   const getSentimentLabel = (sentiment?: Message['sentiment']): string => {
     switch (sentiment) {
@@ -97,26 +114,33 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
   };
 
   const MessageRow: React.FC<{
-    item: Message;
+    item: LocalMessage;
     isMine: boolean;
     showSenderLabel: boolean;
     onLongPress: () => void;
   }> = ({ item, isMine, showSenderLabel, onLongPress }) => {
     const fadeAnim = useFadeInAnimation(250);
+    const senderLabel = isMine ? 'You' : item.isSystem ? 'System' : formatAddress(item.sender);
+    const shouldShowLabel = showSenderLabel || isMine;
 
     return (
       <Animated.View style={{ opacity: fadeAnim }}>
         <TouchableOpacity onLongPress={onLongPress}>
           <View style={[styles.messageRow, isMine ? styles.messageRowMine : styles.messageRowOther]}>
             <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}>
-              {showSenderLabel && (
+              {shouldShowLabel && (
                 <Text style={styles.senderLabel} numberOfLines={1}>
-                  {formatAddress(item.sender)}
+                  {senderLabel}
                 </Text>
               )}
               <Text style={[styles.messageText, isMine ? styles.messageTextMine : styles.messageTextOther]}>
                 {item.content}
               </Text>
+              {DEMO_MODE && isMine && item.demoTxHash && (
+                <Text style={styles.demoHashText}>
+                  On-chain hash (demo): {item.demoTxHash.slice(0, 10)}...
+                </Text>
+              )}
               {(item.sentiment || item.safetyCategory) && (
                 <View style={styles.badgeRow}>
                   {item.sentiment && (
@@ -158,6 +182,13 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
               <View style={styles.metaRow}>
                 {item.isEdited && <Text style={styles.editedTag}>edited</Text>}
                 <Text style={styles.timeText}>{formatTimestamp(item.timestamp)}</Text>
+                {isMine && item.statusIcon && (
+                  <MaterialCommunityIcons
+                    name={item.statusIcon}
+                    size={14}
+                    color={theme.colors.textSecondary}
+                  />
+                )}
               </View>
             </View>
           </View>
@@ -167,7 +198,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
   };
 
   // Demo messages
-  const demoMessages: Message[] = [
+  const demoMessages: LocalMessage[] = [
     {
       id: 1,
       content: 'Welcome to the chat room!',
@@ -236,8 +267,54 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
+    if (!DEMO_MODE && !isConnected) return;
 
-    const newMessage: Message = {
+    if (DEMO_MODE) {
+      const hash = `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
+      const newMessage: LocalMessage = {
+        id: Date.now(),
+        content: inputText.trim(),
+        sender: user?.walletAddress || user?.email || '0xUser',
+        timestamp: Date.now() / 1000,
+        roomId,
+        isPrivate: false,
+        isEdited: false,
+        editCount: 0,
+        demoTxHash: hash,
+        statusIcon: 'check',
+        sentiment: 'neutral',
+        safetyCategory: 'safe',
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+      setInputText('');
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+
+      setIsReplyTyping(true);
+      const delay = 1000 + Math.floor(Math.random() * 1000);
+      setTimeout(() => {
+        const replyText = demoReplies[Math.floor(Math.random() * demoReplies.length)];
+        const replyMessage: LocalMessage = {
+          id: Date.now() + 1,
+          content: replyText,
+          sender: '0xDEMO_REPLY_BOT',
+          timestamp: Date.now() / 1000,
+          roomId,
+          isPrivate: false,
+          isEdited: false,
+          editCount: 0,
+          isSystem: true,
+          sentiment: 'positive',
+          safetyCategory: 'safe',
+        };
+        setMessages(prev => [...prev, replyMessage]);
+        setIsReplyTyping(false);
+        setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+      }, delay);
+      return;
+    }
+
+    const newMessage: LocalMessage = {
       id: Date.now(),
       content: inputText,
       sender: user?.walletAddress || user?.email || '0xUser',
@@ -320,7 +397,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
     return sender === user?.walletAddress || sender === user?.email;
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
+  const renderMessage = ({ item }: { item: LocalMessage }) => {
     const isMine = isMyMessage(item.sender);
     const showSenderLabel = !isMine && isGroupChat;
 
@@ -363,7 +440,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
           <View style={styles.roomInfo}>
             <View style={styles.roomIconContainer}>
               <MaterialCommunityIcons
-                name={chatAvatar || 'message-text'}
+                name={chatAvatarIcon}
                 size={18}
                 color={theme.colors.textOnPrimary}
               />
@@ -397,6 +474,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
       {/* Messages List */}
       <View style={styles.chatBackground}>
         <FlatList
+          ref={listRef}
           data={messages}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderMessage}
@@ -411,6 +489,14 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
                 <Text style={[styles.futureFeatureDesc, { color: theme.colors.textSecondary }]}>View full edit audit trail for all messages</Text>
               </View>
             </View>
+          }
+          ListFooterComponent={
+            isReplyTyping ? (
+              <View style={styles.typingBubble}>
+                <MaterialCommunityIcons name="dots-horizontal" size={20} color={theme.colors.textSecondary} />
+                <Text style={styles.typingText}>Typing…</Text>
+              </View>
+            ) : null
           }
         />
       </View>
@@ -436,7 +522,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
         )}
         
         <View style={styles.composerWrapper}>
-          {!isConnected && (
+          {!isConnected && !DEMO_MODE && (
             <Text style={styles.inputHelperText}>Connect wallet to send messages.</Text>
           )}
           <View style={styles.inputRow}>
@@ -456,17 +542,17 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({ navigation, rout
                 onChangeText={setInputText}
                 multiline
                 maxLength={500}
-                editable={isConnected}
+                editable={DEMO_MODE || isConnected}
               />
             </View>
             
             <TouchableOpacity
               style={[
                 styles.sendButtonComposer,
-                (!inputText.trim() || !isConnected) && styles.sendButtonComposerDisabled
+                (!inputText.trim() || (!isConnected && !DEMO_MODE)) && styles.sendButtonComposerDisabled
               ]}
               onPress={editingMessageId ? handleSaveEdit : handleSend}
-              disabled={!inputText.trim() || !isConnected}
+              disabled={!inputText.trim() || (!isConnected && !DEMO_MODE)}
               activeOpacity={0.8}
             >
               <MaterialCommunityIcons
@@ -634,13 +720,13 @@ const styles = StyleSheet.create({
   },
   bubbleMine: {
     backgroundColor: theme.colors.primary,
-    borderBottomRightRadius: theme.borderRadius.xs,
+    borderBottomRightRadius: theme.borderRadius.sm,
     shadowColor: theme.colors.primary,
     shadowOpacity: 0.15,
   },
   bubbleOther: {
     backgroundColor: theme.colors.backgroundSecondary,
-    borderBottomLeftRadius: theme.borderRadius.xs,
+    borderBottomLeftRadius: theme.borderRadius.sm,
     borderWidth: 1,
     borderColor: theme.colors.borderLight,
   },
@@ -660,6 +746,11 @@ const styles = StyleSheet.create({
   },
   messageTextOther: {
     color: theme.colors.text,
+  },
+  demoHashText: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
   },
   metaRow: {
     flexDirection: 'row',
@@ -721,6 +812,25 @@ const styles = StyleSheet.create({
   },
   futureFeatureDesc: {
     fontSize: theme.typography.fontSize.xs,
+  },
+  typingBubble: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
+    marginLeft: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  typingText: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   demoBanner: {
     marginHorizontal: theme.spacing.md,
