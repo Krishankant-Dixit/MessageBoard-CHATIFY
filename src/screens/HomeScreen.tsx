@@ -29,7 +29,7 @@ import { theme } from '../theme';
 import { Message } from '../contracts/MessageBoard';
 import { analyzeSentiment } from '../services/geminiService';
 import { formatTimestamp } from '../utils/helpers';
-import { DEMO_MODE, MAX_MESSAGE_LENGTH } from '../utils/constants';
+import { DEMO_MODE, MAX_MESSAGE_LENGTH, IS_WEB } from '../utils/constants';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<any, 'Chats'>,
@@ -188,6 +188,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               safetyStatus: getMockSafetyStatus(msg),
             };
           } catch (error) {
+            console.warn('Sentiment analysis failed:', error);
             return {
               ...msg,
               sentiment: getMockSentiment(msg),
@@ -200,7 +201,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       setMessages(messagesWithSentiment.reverse());
     } catch (error) {
       console.error('Error loading messages:', error);
-      Alert.alert('Error', 'Failed to load messages');
+      // Fallback: show demo messages instead of crashing
+      console.log('ℹ Loading demo messages as fallback');
+      const fallbackMessages: DisplayMessage[] = [];
+      setMessages(fallbackMessages);
+      
+      if (!IS_WEB) {
+        Alert.alert('Error', 'Failed to load messages');
+      }
     } finally {
       setLoading(false);
     }
@@ -208,19 +216,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadMessages();
-    setRefreshing(false);
+    try {
+      await loadMessages();
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleConnect = async () => {
     try {
       await connectWallet();
-      Alert.alert('Success', '✓ Wallet connected successfully!');
+      const message = IS_WEB 
+        ? '✓ Demo wallet connected!' 
+        : '✓ Wallet connected successfully!';
+      Alert.alert('Success', message);
       if (DEMO_MODE) {
         navigation.navigate('MainTabs' as any, { screen: 'Chats' });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to connect wallet.');
+      console.error('Connection error:', error);
+      let errorMessage = 'Failed to connect wallet.';
+      if (IS_WEB) {
+        errorMessage = 'Demo wallet connection failed. Please refresh and try again.';
+      }
+      Alert.alert('Error', errorMessage);
     }
   };
 
@@ -302,9 +323,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       await postMessage(trimmed);
       setMessageInput('');
       setIsTyping(false);
-      await loadMessages();
+      
+      const successMessage = IS_WEB 
+        ? 'Message sent (simulated)' 
+        : 'Message sent successfully';
+      Alert.alert('Success ✓', successMessage);
+      
+      // Reload messages after sending
+      try {
+        await loadMessages();
+      } catch (error) {
+        console.warn('Failed to reload messages after sending:', error);
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to send message');
+      console.error('Error sending message:', error);
+      let errorMessage = 'Failed to send message';
+      if (IS_WEB) {
+        errorMessage = 'Failed to send message in demo mode. Please try again.';
+      }
+      Alert.alert('Error', errorMessage);
     } finally {
       setSending(false);
     }

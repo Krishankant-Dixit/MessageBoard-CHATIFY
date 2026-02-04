@@ -10,12 +10,14 @@ import {
   updateWalletLastConnected,
   DemoWallet,
 } from '../services/demoWalletService';
+import { wrapPlatformOperation, isWeb } from '../utils/platformDetection';
 
 /**
  * Web3 Context for MetaMask Integration
  * Provides blockchain connection, wallet management, and contract interaction
  * 
  * Respects DEMO_MODE flag - when enabled, uses mock data without blockchain calls
+ * On web platform, all blockchain writes are simulated and never actually sent
  */
 
 type Web3Provider = ethers.JsonRpcProvider | null;
@@ -104,10 +106,12 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
 
   /**
    * Load stored connection state from AsyncStorage
+   * Gracefully handles errors on web platform
    */
   const loadConnectionState = async () => {
     try {
       if (isWebDemo) {
+        console.log('ℹ Web platform detected - skipping persistent storage');
         return;
       }
       const state = await getConnectionState();
@@ -126,13 +130,16 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
       }
     } catch (error) {
       console.error('Error loading connection state:', error);
+      // Don't crash on storage errors - app should continue functioning
+      console.log('ℹ Continuing with fresh connection');
     }
   };
 
   /**
    * Connect to wallet (RPC provider)
    * For mobile, this would use WalletConnect
-   * In DEMO_MODE, uses mock wallet without blockchain calls
+   * In DEMO_MODE or web, uses mock wallet without blockchain calls
+   * Handles errors gracefully on all platforms
    */
   const connectWallet = async () => {
     try {
@@ -160,6 +167,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
           console.log('✓ Web demo wallet connected:', formatAddress(simulatedWallet.address));
           console.log('  - Address:', simulatedWallet.address);
           console.log('  - Network:', getDemoNetworkName(DEFAULT_CHAIN_ID));
+          console.log('  - Mode: Simulated (no blockchain writes)');
           return simulatedWallet.address;
         }
 
@@ -220,28 +228,55 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
       return wallet.address;
     } catch (error) {
       console.error('Error connecting wallet:', error);
+      // Fallback: still set up demo mode so app doesn't crash
+      const fallbackWallet: DemoWallet = {
+        address: DEMO_WALLET_ADDRESS,
+        privateKey: '0x' + '0'.repeat(64),
+        name: 'Fallback Demo Wallet',
+        createdAt: Date.now(),
+        lastConnected: Date.now(),
+      };
+      setDemoWallet(fallbackWallet);
+      setAccount(fallbackWallet.address);
+      setIsConnected(false);
+      setChainId(DEFAULT_CHAIN_ID);
+      setNetwork(getDemoNetworkName(DEFAULT_CHAIN_ID));
+      console.log('⚠ Fallback demo wallet activated');
       throw error;
     }
   };
 
   /**
    * Disconnect wallet and clear state
+   * Handles gracefully on all platforms
    */
   const disconnectWallet = async () => {
-    setProvider(null);
-    setSigner(null);
-    setAccount(null);
-    setIsConnected(false);
-    setChainId(null);
-    setNetwork(null);
-    setDemoWallet(null);
-    
-    // Clear stored connection state
-    if (!isWebDemo) {
-      await clearConnectionState();
+    try {
+      setProvider(null);
+      setSigner(null);
+      setAccount(null);
+      setIsConnected(false);
+      setChainId(null);
+      setNetwork(null);
+      setDemoWallet(null);
+      
+      // Clear stored connection state
+      if (!isWebDemo) {
+        await clearConnectionState();
+      }
+      
+      console.log('✓ Wallet disconnected');
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
+      // Always clear local state even if storage fails
+      setProvider(null);
+      setSigner(null);
+      setAccount(null);
+      setIsConnected(false);
+      setChainId(null);
+      setNetwork(null);
+      setDemoWallet(null);
     }
-    
-    console.log('✓ Wallet disconnected');
   };
 
   /**
@@ -268,7 +303,8 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
   /**
    * Post a message to the blockchain
    * Returns transaction hash
-   * In DEMO_MODE, returns mock transaction hash with simulated delay
+   * In DEMO_MODE or web, returns mock transaction hash with simulated delay
+   * Never actually posts to blockchain on web platform
    */
   const postMessage = async (_message: string): Promise<string> => {
     try {
@@ -281,6 +317,9 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
         await simulateNetworkDelay();
         const mockTxHash = `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
         console.log('✓ Message posted (Demo Mode):', mockTxHash);
+        if (isWebDemo) {
+          console.log('  - This is a simulated transaction (web platform)');
+        }
         return mockTxHash;
       }
 
@@ -308,19 +347,29 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
       return mockTxHash;
     } catch (error) {
       console.error('Error posting message:', error);
+      // Return a demo hash instead of crashing
+      if (isWebDemo) {
+        console.log('⚠ Message post failed, returning mock hash for web platform');
+        const mockTxHash = `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
+        return mockTxHash;
+      }
       throw error;
     }
   };
 
   /**
    * Get messages from the blockchain
-   * In DEMO_MODE, returns mock messages with simulated delay
+   * In DEMO_MODE or web, returns mock messages with simulated delay
+   * Never queries real blockchain on web platform
    */
   const getMessages = async (limit: number = 10, offset: number = 0): Promise<Message[]> => {
     try {
       if (DEMO_MODE || isWebDemo) {
         // Demo mode: return mock messages with simulated delay
         await simulateNetworkDelay();
+        if (isWebDemo) {
+          console.log('✓ Messages fetched (simulated, web platform)');
+        }
         return getDemoMessages(limit, offset);
       }
 
@@ -345,20 +394,25 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
       return getDemoMessages(limit, offset);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      // Return demo messages as fallback
+      // Return demo messages as fallback - never crash
+      console.log('ℹ Returning demo messages as fallback');
       return getDemoMessages(limit, offset);
     }
   };
 
   /**
    * Get total message count from contract
-   * In DEMO_MODE, returns mock count with simulated delay
+   * In DEMO_MODE or web, returns mock count with simulated delay
+   * Never queries real blockchain on web platform
    */
   const getMessageCount = async (): Promise<number> => {
     try {
       if (DEMO_MODE || isWebDemo) {
         // Demo mode: return mock count with simulated delay
         await simulateNetworkDelay();
+        if (isWebDemo) {
+          console.log('✓ Message count fetched (simulated, web platform)');
+        }
         return MOCK_MESSAGES.length;
       }
 
@@ -380,7 +434,9 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }: Web3Prov
       return MOCK_MESSAGES.length;
     } catch (error) {
       console.error('Error fetching message count:', error);
-      return 3;
+      // Return demo count as fallback - never crash
+      console.log('ℹ Returning demo message count as fallback');
+      return MOCK_MESSAGES.length;
     }
   };
 

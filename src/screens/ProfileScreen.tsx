@@ -17,7 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useWeb3, formatAddress } from '../context/Web3Context';
 import { Card, Button } from '../components';
-import { DEMO_MODE } from '../utils/constants';
+import { DEMO_MODE, IS_WEB } from '../utils/constants';
 import { theme } from '../theme';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<any, 'Profile'>;
@@ -35,8 +35,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const handleCopyAddress = () => {
     if (account) {
-      Clipboard.setString(account);
-      Alert.alert('Copied!', 'Wallet address copied to clipboard');
+      try {
+        Clipboard.setString(account);
+        Alert.alert('Copied!', 'Wallet address copied to clipboard');
+      } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        Alert.alert('Error', 'Failed to copy address');
+      }
     }
   };
 
@@ -48,9 +53,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Disconnect',
-          onPress: () => {
-            disconnectWallet();
-            Alert.alert('Disconnected', 'Wallet disconnected successfully.');
+          onPress: async () => {
+            try {
+              await disconnectWallet();
+              const message = IS_WEB 
+                ? 'Demo wallet disconnected.' 
+                : 'Wallet disconnected successfully.';
+              Alert.alert('Disconnected', message);
+            } catch (error) {
+              console.error('Error disconnecting wallet:', error);
+              Alert.alert('Error', 'Failed to disconnect wallet');
+            }
           },
           style: 'destructive',
         },

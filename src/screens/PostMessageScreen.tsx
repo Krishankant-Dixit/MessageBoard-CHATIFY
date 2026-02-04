@@ -18,7 +18,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { Button, Input, Card } from '../components';
 import { theme } from '../theme';
 import { useWeb3, formatAddress } from '../context/Web3Context';
-import { MAX_MESSAGE_LENGTH, NETWORK_NAMES } from '../utils/constants';
+import { MAX_MESSAGE_LENGTH, NETWORK_NAMES, IS_WEB } from '../utils/constants';
 import {
   analyzeMessageSafety,
   generateSmartSuggestions,
@@ -116,9 +116,14 @@ export const PostMessageScreen: React.FC<PostMessageScreenProps> = ({
     try {
       const txHash = await postMessage(message);
       
+      const alertTitle = IS_WEB ? 'Message Sent (Demo)' : 'Success ✓';
+      const alertMessage = IS_WEB 
+        ? `Message sent in demo mode!\nTx: ${txHash.slice(0, 10)}...\n\n(This is a simulated transaction)`
+        : `Message posted to blockchain!\nTx: ${txHash.slice(0, 10)}...`;
+      
       Alert.alert(
-        'Success ✓',
-        `Message posted to blockchain!\nTx: ${txHash.slice(0, 10)}...`,
+        alertTitle,
+        alertMessage,
         [
           {
             text: 'OK',
@@ -134,10 +139,14 @@ export const PostMessageScreen: React.FC<PostMessageScreenProps> = ({
       );
     } catch (error) {
       console.error('Error posting message:', error);
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to post message'
-      );
+      
+      // On web, don't show full error - provide user-friendly message
+      let errorMessage = error instanceof Error ? error.message : 'Failed to post message';
+      if (IS_WEB) {
+        errorMessage = 'Failed to send message. Please try again.';
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,11 +1,19 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ethers } from 'ethers';
+import { Platform } from 'react-native';
+import {
+  setStorageItem,
+  getStorageItem,
+  removeStorageItem,
+  isWebPlatform,
+} from '../utils/webSafeStorage';
 
 /**
  * Demo Wallet Service
  * Generates and manages fake Ethereum addresses for demo/testing purposes
- * Stores wallet data persistently using AsyncStorage
+ * Stores wallet data persistently using web-safe storage (AsyncStorage on native, in-memory on web)
  */
+
+const IS_WEB = Platform.OS === 'web';
 
 const DEMO_WALLET_STORAGE_KEY = '@chatify:demo_wallet';
 const DEMO_CONNECTION_STATE_KEY = '@chatify:demo_connection_state';
@@ -62,11 +70,14 @@ export const generateDemoWalletFromSeed = (seed: string): { address: string; pri
  */
 export const storeDemoWallet = async (wallet: DemoWallet): Promise<void> => {
   try {
-    await AsyncStorage.setItem(DEMO_WALLET_STORAGE_KEY, JSON.stringify(wallet));
+    await setStorageItem(DEMO_WALLET_STORAGE_KEY, JSON.stringify(wallet));
     console.log('✓ Demo wallet stored:', wallet.address);
   } catch (error) {
     console.error('Error storing demo wallet:', error);
-    throw error;
+    // Don't throw on web - storage is handled gracefully
+    if (!isWebPlatform()) {
+      throw error;
+    }
   }
 };
 
@@ -75,7 +86,7 @@ export const storeDemoWallet = async (wallet: DemoWallet): Promise<void> => {
  */
 export const getStoredDemoWallet = async (): Promise<DemoWallet | null> => {
   try {
-    const stored = await AsyncStorage.getItem(DEMO_WALLET_STORAGE_KEY);
+    const stored = await getStorageItem(DEMO_WALLET_STORAGE_KEY);
     if (stored) {
       const wallet = JSON.parse(stored) as DemoWallet;
       console.log('✓ Demo wallet retrieved:', wallet.address);
@@ -84,6 +95,7 @@ export const getStoredDemoWallet = async (): Promise<DemoWallet | null> => {
     return null;
   } catch (error) {
     console.error('Error retrieving demo wallet:', error);
+    // Return null gracefully on error
     return null;
   }
 };
@@ -93,11 +105,14 @@ export const getStoredDemoWallet = async (): Promise<DemoWallet | null> => {
  */
 export const deleteDemoWallet = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(DEMO_WALLET_STORAGE_KEY);
+    await removeStorageItem(DEMO_WALLET_STORAGE_KEY);
     console.log('✓ Demo wallet deleted');
   } catch (error) {
     console.error('Error deleting demo wallet:', error);
-    throw error;
+    // Don't throw on web
+    if (!isWebPlatform()) {
+      throw error;
+    }
   }
 };
 
@@ -137,11 +152,14 @@ export const getOrCreateDemoWallet = async (name: string = 'Demo User'): Promise
  */
 export const storeConnectionState = async (state: ConnectionState): Promise<void> => {
   try {
-    await AsyncStorage.setItem(DEMO_CONNECTION_STATE_KEY, JSON.stringify(state));
+    await setStorageItem(DEMO_CONNECTION_STATE_KEY, JSON.stringify(state));
     console.log('✓ Connection state stored');
   } catch (error) {
     console.error('Error storing connection state:', error);
-    throw error;
+    // Don't throw on web
+    if (!isWebPlatform()) {
+      throw error;
+    }
   }
 };
 
@@ -150,7 +168,7 @@ export const storeConnectionState = async (state: ConnectionState): Promise<void
  */
 export const getConnectionState = async (): Promise<ConnectionState | null> => {
   try {
-    const stored = await AsyncStorage.getItem(DEMO_CONNECTION_STATE_KEY);
+    const stored = await getStorageItem(DEMO_CONNECTION_STATE_KEY);
     if (stored) {
       return JSON.parse(stored) as ConnectionState;
     }
@@ -166,11 +184,14 @@ export const getConnectionState = async (): Promise<ConnectionState | null> => {
  */
 export const clearConnectionState = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(DEMO_CONNECTION_STATE_KEY);
+    await removeStorageItem(DEMO_CONNECTION_STATE_KEY);
     console.log('✓ Connection state cleared');
   } catch (error) {
     console.error('Error clearing connection state:', error);
-    throw error;
+    // Don't throw on web
+    if (!isWebPlatform()) {
+      throw error;
+    }
   }
 };
 

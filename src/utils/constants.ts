@@ -3,6 +3,18 @@
 import { Platform } from 'react-native';
 
 /**
+ * Platform Detection
+ * IS_WEB: true when running on web platform (e.g., browser)
+ * 
+ * Web Platform Behavior:
+ * - Blockchain writes are simulated (never sent to real blockchain)
+ * - Storage uses in-memory cache (not persistent between page reloads)
+ * - Wallet connection is fully simulated
+ * - Messages use mock data
+ */
+export const IS_WEB = Platform.OS === 'web';
+
+/**
  * DEMO_MODE: Global flag to enable demo/test mode
  * When enabled:
  * - All blockchain calls are disabled (returns mock data)
@@ -10,9 +22,9 @@ import { Platform } from 'react-native';
  * - Uses local mock data for all operations
  * - Simulates network delays for realistic UX
  * 
+ * Automatically enabled on web platform for safety
  * Set to false for production or when blockchain/AI is properly configured
  */
-export const IS_WEB = Platform.OS === 'web';
 const demoEnv = process.env.EXPO_PUBLIC_DEMO_MODE;
 export const DEMO_MODE = IS_WEB || demoEnv !== 'false';
 
